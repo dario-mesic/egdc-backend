@@ -23,3 +23,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/")
 def root():
     return {"message": "Welcome to EGDC Repository API"}
+
+@app.get("/hello")
+def hello():
+    return {"message": "EGDC Hello World - Deployment Successful!"}
