@@ -1,0 +1,19 @@
+[project]
+name = "egdc-backend"
+version = "0.1.0"
+description = "EGDC Repository Backend"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "sqlmodel>=0.0.14",
+    "asyncpg>=0.29.0",
+    "pydantic-settings>=2.1.0",
+    "python-multipart>=0.0.7",
+    "email-validator>=2.1.0.post1"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

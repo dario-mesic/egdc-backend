@@ -1,0 +1,856 @@
+{
+  "reference_data": {
+    "sectors": [
+      {
+        "code": "energy",
+        "label": "Energy"
+      },
+      {
+        "code": "transport",
+        "label": "Transport"
+      },
+      {
+        "code": "smart-cities",
+        "label": "Smart Cities"
+      },
+      {
+        "code": "manufacturing",
+        "label": "Manufacturing"
+      },
+      {
+        "code": "agriculture",
+        "label": "Agriculture"
+      },
+      {
+        "code": "construction",
+        "label": "Construction"
+      }
+    ],
+    "org_types": [
+      {
+        "code": "company",
+        "label": "Private Company"
+      },
+      {
+        "code": "public",
+        "label": "Public Institution"
+      },
+      {
+        "code": "ngo",
+        "label": "NGO"
+      },
+      {
+        "code": "academic",
+        "label": "Academic Institution"
+      }
+    ],
+    "funding_types": [
+      {
+        "code": "public",
+        "label": "Public"
+      },
+      {
+        "code": "private",
+        "label": "Private"
+      },
+      {
+        "code": "public-private",
+        "label": "Public-Private Partnership"
+      }
+    ],
+    "calculation_types": [
+      {
+        "code": "ex-ante",
+        "label": "Ex-ante"
+      },
+      {
+        "code": "ex-post",
+        "label": "Ex-post"
+      }
+    ],
+    "benefit_units": [
+      {
+        "code": "tco2",
+        "label": "Tonnes CO2e"
+      },
+      {
+        "code": "kwh",
+        "label": "kWh"
+      },
+      {
+        "code": "percent",
+        "label": "% Reduction"
+      },
+      {
+        "code": "eur",
+        "label": "Euro"
+      },
+      {
+        "code": "kg",
+        "label": "Kilograms"
+      }
+    ],
+    "benefit_types": [
+      {
+        "code": "environmental",
+        "label": "Environmental"
+      },
+      {
+        "code": "economic",
+        "label": "Economic"
+      },
+      {
+        "code": "social",
+        "label": "Social"
+      }
+    ],
+    "technologies": [
+      {
+        "code": "5g",
+        "label": "5G"
+      },
+      {
+        "code": "iot",
+        "label": "IoT"
+      },
+      {
+        "code": "ai",
+        "label": "AI"
+      },
+      {
+        "code": "big-data",
+        "label": "Big Data"
+      },
+      {
+        "code": "automation",
+        "label": "Automation & Control Systems"
+      },
+      {
+        "code": "digital-twin",
+        "label": "Digital Twin"
+      },
+      {
+        "code": "fleet-management",
+        "label": "Fleet Management System"
+      },
+      {
+        "code": "blockchain",
+        "label": "Blockchain"
+      },
+      {
+        "code": "robotics",
+        "label": "Robotics"
+      },
+      {
+        "code": "cloud",
+        "label": "Cloud Computing"
+      }
+    ],
+    "countries": [
+      {
+        "code": "ITA",
+        "label": "Italy"
+      },
+      {
+        "code": "FRA",
+        "label": "France"
+      },
+      {
+        "code": "CYP",
+        "label": "Cyprus"
+      },
+      {
+        "code": "CRO",
+        "label": "Croatia"
+      },
+      {
+        "code": "DEU",
+        "label": "Germany"
+      },
+      {
+        "code": "SWE",
+        "label": "Sweden"
+      },
+      {
+        "code": "NOR",
+        "label": "Norway"
+      },
+      {
+        "code": "ESP",
+        "label": "Spain"
+      },
+      {
+        "code": "GRC",
+        "label": "Greece"
+      }
+    ]
+  },
+  "organizations": [
+    {
+      "name": "Ericsson",
+      "description": "Ericsson is a Swedish multinational networking and telecommunications company.",
+      "sector_code": "transport",
+      "org_type_code": "company",
+      "website_url": "https://ericsson.com",
+      "contact_points": [
+        {
+          "name": "Sustainability Team",
+          "has_email": "sustainability@ericsson.com"
+        }
+      ]
+    },
+    {
+      "name": "Schneider Electric",
+      "description": "Schneider Electric specializes in digital automation and energy management.",
+      "sector_code": "construction",
+      "org_type_code": "company",
+      "website_url": "https://se.com",
+      "contact_points": [
+        {
+          "name": "Green Building Team",
+          "has_email": "contact@se.com"
+        }
+      ]
+    },
+    {
+      "name": "Nokia",
+      "description": "Nokia is a B2B technology innovation leader in networking and digital infrastructure.",
+      "sector_code": "smart-cities",
+      "org_type_code": "company",
+      "website_url": "https://nokia.com",
+      "contact_points": [
+        {
+          "name": "Smart City Dept",
+          "has_email": "smartcity@nokia.com"
+        }
+      ]
+    },
+    {
+      "name": "AddSecure",
+      "description": "AddSecure is a leading European provider of secure IoT connectivity solutions and smart transport systems.",
+      "sector_code": "transport",
+      "org_type_code": "company",
+      "website_url": "https://addsecure.com",
+      "contact_points": [
+        {
+          "name": "Smart Transport Team",
+          "has_email": "info@addsecure.com"
+        }
+      ]
+    },
+    {
+      "name": "University of Valencia",
+      "description": "The University of Valencia is a Spanish public research university developing innovative fleet optimization solutions.",
+      "sector_code": "transport",
+      "org_type_code": "academic",
+      "website_url": "https://uv.es",
+      "contact_points": [
+        {
+          "name": "PREDRI Research Team",
+          "has_email": "predri@uv.es"
+        }
+      ]
+    },
+    {
+      "name": "Inteligg",
+      "description": "Inteligg is a Greek technology company specializing in cloud-based building energy management systems.",
+      "sector_code": "construction",
+      "org_type_code": "company",
+      "website_url": "https://inteligg.com",
+      "contact_points": [
+        {
+          "name": "c-BEMS Support",
+          "has_email": "info@inteligg.com"
+        }
+      ]
+    },
+    {
+      "name": "Telefónica",
+      "description": "Telefónica is a Spanish multinational telecommunications company providing innovative digital solutions.",
+      "sector_code": "energy",
+      "org_type_code": "company",
+      "website_url": "https://telefonica.com",
+      "contact_points": [
+        {
+          "name": "Energy Solutions Team",
+          "has_email": "energy@telefonica.com"
+        }
+      ]
+    },
+    {
+      "name": "Red Eléctrica de España",
+      "description": "Red Eléctrica de España is the Spanish electricity system operator responsible for the transmission grid.",
+      "sector_code": "energy",
+      "org_type_code": "public",
+      "website_url": "https://ree.es",
+      "contact_points": [
+        {
+          "name": "Grid Innovation Team",
+          "has_email": "innovation@ree.es"
+        }
+      ]
+    },
+    {
+      "name": "IBM",
+      "description": "IBM is a global technology company providing innovative solutions for energy management and sustainability.",
+      "sector_code": "energy",
+      "org_type_code": "company",
+      "website_url": "https://ibm.com",
+      "contact_points": [
+        {
+          "name": "Sustainability Solutions",
+          "has_email": "sustainability@ibm.com"
+        }
+      ]
+    },
+    {
+      "name": "Ekobot",
+      "description": "Ekobot develops autonomous electric field robots for sustainable mechanical weed control in agriculture.",
+      "sector_code": "agriculture",
+      "org_type_code": "company",
+      "website_url": "https://ekobot.se",
+      "contact_points": [
+        {
+          "name": "Ekobot Team",
+          "has_email": "info@ekobot.se"
+        }
+      ]
+    },
+    {
+      "name": "Telia",
+      "description": "Telia is a Swedish multinational telecommunications company providing 5G connectivity solutions.",
+      "sector_code": "agriculture",
+      "org_type_code": "company",
+      "website_url": "https://telia.se",
+      "contact_points": [
+        {
+          "name": "IoT Solutions Team",
+          "has_email": "iot@telia.se"
+        }
+      ]
+    },
+    {
+      "name": "Atea",
+      "description": "Atea is a leading Nordic IT infrastructure company providing blockchain-based tracking solutions.",
+      "sector_code": "agriculture",
+      "org_type_code": "company",
+      "website_url": "https://atea.com",
+      "contact_points": [
+        {
+          "name": "GlobeTrack Team",
+          "has_email": "globetrack@atea.com"
+        }
+      ]
+    },
+    {
+      "name": "Dassault Systèmes",
+      "description": "Dassault Systèmes is a French multinational software company specializing in 3D design and manufacturing solutions.",
+      "sector_code": "manufacturing",
+      "org_type_code": "company",
+      "website_url": "https://3ds.com",
+      "contact_points": [
+        {
+          "name": "DELMIA Team",
+          "has_email": "delmia@3ds.com"
+        }
+      ]
+    }
+  ],
+  "case_studies": [
+    {
+      "title": "Optimisation of port processes by Ericsson",
+      "short_description": "Using 5G to enhance real-time info exchange in the Port of Livorno.",
+      "long_description": "This solution uses 5G technologies to enhance the exchange of real-time information among actors in a port's terminal process (Port of Livorno, Italy). It focuses on reducing movements of cargo handling equipment to lower fuel consumption. The Port of Livorno case was originally developed in collaboration between the Port of Livorno, Ericsson, Fondazione Eni Enrico Mattei (FEEM) and the National Inter-University CNIT as part of the EU H2020 project Corealis.",
+      "problem_solved": "Inefficient exchange of real-time information leading to excessive fuel consumption.",
+      "created_date": "2026-01-12",
+      "tech_code": "5g",
+      "calc_type_code": "ex-ante",
+      "funding_type_code": "public-private",
+      "benefits": [
+        {
+          "name": "CO2 Reduction",
+          "value": 111,
+          "unit_code": "tco2",
+          "type_code": "environmental"
+        },
+        {
+          "name": "Cost Savings",
+          "value": 200000,
+          "unit_code": "eur",
+          "type_code": "economic"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "ITA",
+          "post_name": "Livorno"
+        }
+      ],
+      "providers": [
+        "Ericsson"
+      ],
+      "methodology": {
+        "name": "Methodology Report 5G Port",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Meth.-Ericsson-5G.pdf"
+      },
+      "logo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Ericsson_%282018%29.svg/1280px-Ericsson_%282018%29.svg.png",
+        "alt_text": "Ericsson Logo"
+      },
+      "dataset": {
+        "name": "5G Port Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-Ericsson-5G.xlsx"
+      }
+    },
+    {
+      "title": "Logic TMS by AddSecure",
+      "short_description": "Cloud-based transport management system with AI-enabled route optimization.",
+      "long_description": "Logic TMS is a transport management system offered as an end-to-end solution for carriers. Logic TMS brings the entire order management process to a modern cloud-based platform, providing real-time control and insights that help optimize every stage of the transport process, including fleet and fuel utilization and order management. The AI-enabled AutoPlanner tool helps calculate best route combinations, highlighting associated fuel and cost savings.",
+      "problem_solved": "Inefficient route planning and fleet management leading to excess fuel consumption and higher costs.",
+      "created_date": "2026-01-12",
+      "tech_code": "fleet-management",
+      "calc_type_code": "ex-post",
+      "funding_type_code": "private",
+      "benefits": [
+        {
+          "name": "Fuel Reduction",
+          "value": 15,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        },
+        {
+          "name": "CO2 Emissions Savings",
+          "value": 250,
+          "unit_code": "tco2",
+          "type_code": "environmental"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "SWE",
+          "post_name": "Stockholm"
+        }
+      ],
+      "providers": [
+        "AddSecure"
+      ],
+      "methodology": {
+        "name": "Logic TMS Methodology",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Method.-AddSecure-Logic-TMS.pdf"
+      },
+      "logo": {
+        "url": "https://www.addsecure.com/img-srv/8M_hlJA-35Fwx1m4z5KOxEWvPZYqURqxss-BS5QNjxg/resizing_type:auto/width:500/height:0/gravity:sm/enlarge:1/ext:jpg/strip_metadata:1/quality:82/cachebuster:filesize-8446/bG9jYWw6Ly8vd3d3LmFkZHNlY3VyZS5jb20vd3AtY29udGVudC91cGxvYWRzLzIwMjIvMDcvQWRkU2VjdXJlX2xvZ29fdHJhZGVtYXJrX2NvbG9yX2JpZ19SR0JfM181LTEuanBn.jpg",
+        "alt_text": "AddSecure Logo"
+      },
+      "dataset": {
+        "name": "Logic TMS Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-AddSecure-Logic-TMS.xlsx"
+      }
+    },
+    {
+      "title": "PREDRI Fleet Optimization Solution",
+      "short_description": "AI-powered fleet optimization with on-board monitoring for efficient driving.",
+      "long_description": "PREDRI is a fleet optimization solution that leverages on-board monitoring with Artificial Intelligence to optimize routes and encourage efficient and safe driving. Continuous reporting of mechanical parameters helps to anticipate failures and prevent high damage, ultimately extending the life of various mechanical parts. Together with an integrated refueling and spare part stock system, PREDRI increases fuel efficiency, fine-tunes maintenance, and extends the life of exhaustive spare parts.",
+      "problem_solved": "Inefficient fleet operations, excessive fuel consumption, and premature mechanical failures.",
+      "created_date": "2026-01-12",
+      "tech_code": "ai",
+      "calc_type_code": "ex-post",
+      "funding_type_code": "public",
+      "benefits": [
+        {
+          "name": "Fuel Efficiency Improvement",
+          "value": 12,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        },
+        {
+          "name": "Maintenance Cost Reduction",
+          "value": 20,
+          "unit_code": "percent",
+          "type_code": "economic"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "ESP",
+          "post_name": "Valencia"
+        }
+      ],
+      "providers": [
+        "University of Valencia"
+      ],
+      "methodology": {
+        "name": "PREDRI Methodology",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Method.-PREDRI.pdf"
+      },
+      "logo": {
+        "url": "https://www.uv.es/uwm/LogotipUV/logo_UV_1_linia.jpg",
+        "alt_text": "University of Valencia Logo"
+      },
+      "dataset": {
+        "name": "PREDRI Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-PREDRI.xlsx"
+      }
+    },
+    {
+      "title": "c-BEMS Cloud Building Energy Management",
+      "short_description": "Cloud-based SaaS building energy management with AI-powered optimization.",
+      "long_description": "c-BEMS is a cloud-based SaaS (software-as-a-service) tool for the Building Energy Management System (BEMS) that achieves high energy savings for any kind of buildings through building automation technologies. It implements remote control of multi-zonal HVAC/lighting systems via Wi-Fi connected sensors in a unique IoT platform by employing AI/ML algorithms and Model Predictive Control to automate the energy/lighting consumption behaviour detection, thermal modelling of the building, energy demand prediction (forecasting) tool and optimization along with an added feature of a CO2 operational emissions calculator.",
+      "problem_solved": "High energy consumption in buildings due to lack of intelligent automation and predictive control.",
+      "created_date": "2026-01-12",
+      "tech_code": "ai",
+      "calc_type_code": "ex-post",
+      "funding_type_code": "private",
+      "benefits": [
+        {
+          "name": "Energy Savings",
+          "value": 30,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        },
+        {
+          "name": "CO2 Emissions Reduction",
+          "value": 320,
+          "unit_code": "tco2",
+          "type_code": "environmental"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "GRC",
+          "post_name": "Athens"
+        }
+      ],
+      "providers": [
+        "Inteligg"
+      ],
+      "methodology": {
+        "name": "c-BEMS Methodology",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Method.-Inteligg-c-BEMS.pdf"
+      },
+      "logo": {
+        "url": "https://static.wixstatic.com/media/08dd1c_f0c01c16da8848a08db472df1086ccf3~mv2.png/v1/crop/x_0,y_1,w_150,h_93/fill/w_144,h_90,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/image3398.png",
+        "alt_text": "Inteligg Logo"
+      },
+      "dataset": {
+        "name": "c-BEMS Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-Inteligg-c-BEMS.xlsx"
+      }
+    },
+    {
+      "title": "High-Performance Building Management System",
+      "short_description": "Automating management processes to enable emissions savings in buildings.",
+      "long_description": "This solution automates management processes to enable emissions savings from energy reduction in non-residential buildings. It allows for control of air quality, temperature, occupant comfort, lighting and heating. These commercial systems provide high levels of control which optimize space, time and energy use.",
+      "problem_solved": "High energy consumption in commercial buildings due to inefficient manual controls.",
+      "created_date": "2026-01-12",
+      "tech_code": "automation",
+      "calc_type_code": "ex-post",
+      "funding_type_code": "private",
+      "benefits": [
+        {
+          "name": "Environmental Impact",
+          "value": 468,
+          "unit_code": "tco2",
+          "type_code": "environmental"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "FRA",
+          "post_name": "Paris"
+        }
+      ],
+      "providers": [
+        "Schneider Electric"
+      ],
+      "methodology": {
+        "name": "BMS Methodology",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Meth.-SE-High-Per.-BMS.pdf"
+      },
+      "logo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Schneider_Electric_2007.svg/2560px-Schneider_Electric_2007.svg.png",
+        "alt_text": "Schneider Logo"
+      },
+      "dataset": {
+        "name": "BMS Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-SE-High-Per.-BMS.xlsx"
+      }
+    },
+    {
+      "title": "Dynamic Line Rating Platform",
+      "short_description": "IoT-based dynamic line rating system for renewable energy integration.",
+      "long_description": "The Dynamic Line Rating Platform is based on the use of dynamic line rating system that enables Electric System Operators to operate transmission lines using real time data and forecasts. The system encompasses conductor sensors and local weather stations, IoT communications, a cloud platform and an algorithm that computes the real time thermal rating and the forecasting. With this system, the System Operator can make use of the idle capacity that already exists in the lines, increasing the capacity of the network to integrate renewable energy into the power system. The deployment of the DLR allows to avoid manufacture of steel structures, use of big cranes and their corresponding emissions.",
+      "problem_solved": "Limited transmission line capacity hindering renewable energy integration and causing unnecessary infrastructure construction.",
+      "created_date": "2026-01-12",
+      "tech_code": "iot",
+      "calc_type_code": "ex-post",
+      "funding_type_code": "public-private",
+      "benefits": [
+        {
+          "name": "Renewable Energy Integration Increase",
+          "value": 25,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        },
+        {
+          "name": "Infrastructure Emissions Avoided",
+          "value": 500,
+          "unit_code": "tco2",
+          "type_code": "environmental"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "ESP",
+          "post_name": "Madrid"
+        }
+      ],
+      "providers": [
+        "Telefónica",
+        "Red Eléctrica de España"
+      ],
+      "methodology": {
+        "name": "DLR Methodology",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Meth.-Telefonica-DLR.pdf"
+      },
+      "logo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Telef%C3%B3nica_2021_logo.svg/960px-Telef%C3%B3nica_2021_logo.svg.png",
+        "alt_text": "Telefónica Logo"
+      },
+      "dataset": {
+        "name": "DLR Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-Telefonica-DLR.xlsx"
+      }
+    },
+    {
+      "title": "IBM Flex Platform for Demand-Side Flexibility",
+      "short_description": "Connecting and aggregating demand-side flexibility across building fleets.",
+      "long_description": "The IBM Flex Platform is a solution that can help governments, municipalities and corporations, through the use of emerging technologies such as IoT and AI, to connect and aggregate their demand-side flexibility across a large fleet of commercial buildings, heat pumps, heating and cooling elements, batteries, solar panels and electric vehicles (EV) charging stations.",
+      "problem_solved": "Lack of coordination and optimization of distributed energy resources and demand-side flexibility.",
+      "created_date": "2026-01-12",
+      "tech_code": "iot",
+      "calc_type_code": "ex-ante",
+      "funding_type_code": "private",
+      "benefits": [
+        {
+          "name": "Grid Flexibility Improvement",
+          "value": 35,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        },
+        {
+          "name": "Peak Energy Reduction",
+          "value": 18,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "DEU",
+          "post_name": "Frankfurt"
+        }
+      ],
+      "providers": [
+        "IBM"
+      ],
+      "methodology": {
+        "name": "Flex Platform Methodology",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Meth.-IBM-Flex-Platform.pdf"
+      },
+      "logo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/IBM_logo.svg/2560px-IBM_logo.svg.png",
+        "alt_text": "IBM Logo"
+      },
+      "dataset": {
+        "name": "Flex Platform Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-IBM-Flex-Platform.xlsx"
+      }
+    },
+    {
+      "title": "Ekobot Autonomous Weed Control Robot",
+      "short_description": "5G-connected autonomous robot for mechanical weed control in agriculture.",
+      "long_description": "Ekobot is an autonomous, electric field robot for mechanical weed control, which is connected to Telia's 5G network. It allows for efficient and environmentally conscious farming. Ekobot can identify and mechanically remove weeds using advanced camera sensors and AI. It enables reductions in the use of chemicals on the field for healthier crops, soil, and production.",
+      "problem_solved": "Excessive use of chemical herbicides in agriculture causing environmental damage and soil degradation.",
+      "created_date": "2026-01-12",
+      "tech_code": "robotics",
+      "calc_type_code": "ex-post",
+      "funding_type_code": "private",
+      "benefits": [
+        {
+          "name": "Herbicide Reduction",
+          "value": 90,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        },
+        {
+          "name": "CO2 Emissions Reduction",
+          "value": 45,
+          "unit_code": "tco2",
+          "type_code": "environmental"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "SWE",
+          "post_name": "Uppsala"
+        }
+      ],
+      "providers": [
+        "Ekobot",
+        "Telia"
+      ],
+      "methodology": {
+        "name": "Ekobot Methodology",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Method.-Ekobot.pdf"
+      },
+      "logo": {
+        "url": "https://www.augment.se/wp-content/uploads/2022/04/ekobot_logo_horizontal_green_dot_png.png",
+        "alt_text": "Ekobot Logo"
+      },
+      "dataset": {
+        "name": "Ekobot Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-Ekobot-Final-Jan24.xlsx"
+      }
+    },
+    {
+      "title": "GlobeTrack Fish Stock Tracking Solution",
+      "short_description": "Blockchain-based cold-chain tracking for sustainable fish stock transport.",
+      "long_description": "GlobeTrack by Atea is a blockchain solution that tracks fish stock transport across cold-chain stages from Norway to a municipal district in Sweden. This tracking technology monitors food stock data metrics such as temperature, location during transport etc. to enable reduced fish stock wastage, more efficient and sustainable value chains and to improve food quality and traceability for customers.",
+      "problem_solved": "Food waste and lack of traceability in cold-chain fish transport leading to quality issues and sustainability concerns.",
+      "created_date": "2026-01-12",
+      "tech_code": "blockchain",
+      "calc_type_code": "ex-post",
+      "funding_type_code": "private",
+      "benefits": [
+        {
+          "name": "Food Waste Reduction",
+          "value": 40,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        },
+        {
+          "name": "CO2 Emissions from Waste Avoided",
+          "value": 85,
+          "unit_code": "tco2",
+          "type_code": "environmental"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "NOR",
+          "post_name": "Oslo"
+        },
+        {
+          "admin_unit_l1": "SWE",
+          "post_name": "Gothenburg"
+        }
+      ],
+      "providers": [
+        "Atea"
+      ],
+      "methodology": {
+        "name": "GlobeTrack Methodology",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Meth.-Atea-GlobeTrack.pdf"
+      },
+      "logo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/8/82/Atea_%28company%29_logo.svg",
+        "alt_text": "Atea Logo"
+      },
+      "dataset": {
+        "name": "GlobeTrack Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-Atea-GlobeTrack.xlsx"
+      }
+    },
+    {
+      "title": "Integrated Operations Center (IOC) for Nicosia",
+      "short_description": "Digital enablement platform for Nicosia Municipality Smart City.",
+      "long_description": "The Integrated Operations Center platform is a digital enablement platform that increases productivity, efficiency and growth through agile introduction and largely automated utilization of digital operational technology assets and capabilities. It is part of the Smart City project of the Nicosia municipality in Cyprus in cooperation with Cyta, where among other operations, it is also used to provide information on waste bin fillings and traffic information using video analytics to reduce overall transport emissions and pollution levels. The main objective of Smart Nicosia project is the development and use of new technological means that will improve the management and functionality of the urban environment in the city of Nicosia.",
+      "problem_solved": "Inefficient management of urban environment (waste, traffic) in Nicosia.",
+      "created_date": "2026-01-12",
+      "tech_code": "iot",
+      "calc_type_code": "ex-post",
+      "funding_type_code": "public",
+      "benefits": [
+        {
+          "name": "Transport Emissions Reduction",
+          "value": 20,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "CYP",
+          "post_name": "Nicosia"
+        }
+      ],
+      "providers": [
+        "Nokia"
+      ],
+      "methodology": {
+        "name": "Smart City Nicosia Report",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Meth-Nokia-Smart-Waste-Management.pdf"
+      },
+      "logo": {
+        "url": "https://www.nokia.com/themes/custom/onenokia_reskin/logo.svg",
+        "alt_text": "Nokia Logo"
+      },
+      "dataset": {
+        "name": "Smart City Nicosia Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-Nokia-Smart-Waste-Management.xlsx"
+      }
+    },
+    {
+      "title": "DELMIA Apriso Manufacturing Operations Management",
+      "short_description": "Digital twin solution for optimizing factory floor operations and reducing waste.",
+      "long_description": "The DELMIA-Apriso solution is a Manufacturing Operations Management tool which helps manufacturers transform global production lines by virtually modelling factory floor operations and live data transfer. This solution enables carbon savings from reduced energy consumption and reduced scrap waste achieved through the optimization of manufacturing processes.",
+      "problem_solved": "Inefficient manufacturing processes leading to high energy consumption and material waste.",
+      "created_date": "2026-01-12",
+      "tech_code": "digital-twin",
+      "calc_type_code": "ex-post",
+      "funding_type_code": "private",
+      "benefits": [
+        {
+          "name": "Scrap Waste Reduction",
+          "value": 25,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        },
+        {
+          "name": "Energy Consumption Reduction",
+          "value": 15,
+          "unit_code": "percent",
+          "type_code": "environmental"
+        },
+        {
+          "name": "CO2 Emissions Reduction",
+          "value": 380,
+          "unit_code": "tco2",
+          "type_code": "environmental"
+        }
+      ],
+      "addresses": [
+        {
+          "admin_unit_l1": "FRA",
+          "post_name": "Vélizy-Villacoublay"
+        }
+      ],
+      "providers": [
+        "Dassault Systèmes"
+      ],
+      "methodology": {
+        "name": "DELMIA Apriso Methodology",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/04/EGDC-Case-Study-Meth.-Dassault-3DS-Delmia.pdf"
+      },
+      "logo": {
+        "url": "https://branding.3ds.com/themes/custom/branding/images/custom-images/logo.svg",
+        "alt_text": "Dassault Systèmes Logo"
+      },
+      "dataset": {
+        "name": "DELMIA Apriso Dataset",
+        "url": "https://www.greendigitalcoalition.eu/assets/uploads/2024/03/EGDC-Case-Study-Calc.-Dassault-3DS-Delmia.xlsx"
+      }
+    }
+  ]
+}
