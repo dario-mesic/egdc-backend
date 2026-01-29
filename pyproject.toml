@@ -12,7 +12,8 @@ dependencies = [
     "pydantic-settings>=2.1.0",
     "python-multipart>=0.0.7",
     "email-validator>=2.1.0.post1",
-    "werkzeug>=1.0.1"
+    "werkzeug>=1.0.1",
+    "psycopg2-binary>=2.9.9"
 ]
 
 [build-system]
