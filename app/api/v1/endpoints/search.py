@@ -1,7 +1,7 @@
 from typing import List, Optional, Literal
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, and_, cast, String
+from sqlalchemy import select, or_, and_, cast, String, func, text
 from sqlalchemy.orm import selectinload
 from app.db.session import get_session
 from app.models.case_study import CaseStudy, Address, Benefit, CaseStudySummaryRead, CaseStudyProviderLink
@@ -15,7 +15,6 @@ router = APIRouter()
 
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.facets import SearchFacets, FacetItem
-from sqlalchemy import func
 
 @router.get("/", response_model=PaginatedResponse[CaseStudySummaryRead])
 async def search_case_studies(
@@ -124,15 +123,24 @@ async def search_case_studies(
                 )
             )
         else:
-            # Partial Match (Default ilike)
+            # --- PARTIAL MATCH + FUZZY SEARCH (Typo Tolerance) ---
+            # TODO: CREATE EXTENSION IF NOT EXISTS pg_trgm;
+            # THAT IS NEEDED FOR FUZZY SEARCH
+
             search_term = f"%{q}%"
+            
+            # Fuzzy Threshold: 0.3 is standard (0.0 = no match, 1.0 = perfect match)
+            # This allows "transprt" (missing 'o') to match "Transport"
+            fuzzy_threshold = 0.3
+            
             data_query = data_query.where(
                 or_(
+                    # 1. Standard Partial Match (Robust substring search)
                     CaseStudy.title.ilike(search_term),
                     CaseStudy.short_description.ilike(search_term),
                     CaseStudy.long_description.ilike(search_term),
                     CaseStudy.problem_solved.ilike(search_term),
-                    cast(CaseStudy.created_date, String).ilike(search_term), # Search by Year/Date
+                    cast(CaseStudy.created_date, String).ilike(search_term),
                     Benefit.name.ilike(search_term),
                     RefBenefitType.label.ilike(search_term),
                     RefBenefitUnit.label.ilike(search_term),
@@ -144,7 +152,14 @@ async def search_case_studies(
                     Address.admin_unit_l1.ilike(search_term),
                     Address.post_name.ilike(search_term),
                     RefTechnology.label.ilike(search_term),
-                    RefCalculationType.label.ilike(search_term)
+                    RefCalculationType.label.ilike(search_term),
+
+                    # 2. Fuzzy Match (Trigram Similarity)
+                    # Catches typos in key fields (Title, Org Name, Sector, City)
+                    func.similarity(CaseStudy.title, q) > fuzzy_threshold,
+                    func.similarity(Organization.name, q) > fuzzy_threshold,
+                    func.similarity(RefSector.label, q) > fuzzy_threshold,
+                    func.similarity(Address.post_name, q) > fuzzy_threshold
                 )
             )
 
