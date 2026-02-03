@@ -12,6 +12,7 @@ from app.models.case_study import (
     CaseStudy, Address, Benefit, ImageObject, Methodology, Dataset,
 )
 import os
+import aiofiles
 
 router = APIRouter()
 
@@ -31,8 +32,9 @@ async def seed_data(session: AsyncSession = Depends(get_session)):
     if not os.path.exists(data_path):
         raise HTTPException(status_code=404, detail="Seed data file not found")
     
-    with open(data_path, "r") as f:
-        data = json.load(f)
+    async with aiofiles.open(data_path, "r", encoding="utf-8") as f:
+        content = await f.read()
+        data = json.loads(content)
 
     # 3. Seed References
     ref_data = data.get("reference_data", {})

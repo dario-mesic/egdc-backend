@@ -1,6 +1,7 @@
 import os
 import shutil
 import uuid
+import aiofiles
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
 from pydantic import Json
@@ -109,17 +110,7 @@ async def read_case_study(id: int, session: AsyncSession = Depends(get_session))
 # assuming the user sends a structure matching the model.
 # In a real app, strict Pydantic CreateSchemas are preferred.
 
-UPLOAD_DIR = "static/uploads"
-
-@router.post("/preview", response_model=CaseStudyDetailRead)
-async def preview_case_study(
-    metadata: str = Form(...),
-    file_methodology: Optional[UploadFile] = File(None),
-    file_dataset: Optional[UploadFile] = File(None),
-    file_logo: Optional[UploadFile] = File(None),
-    session: AsyncSession = Depends(get_session)
-):
-    # 1. Validation (Same as create)
+def validate_case_study_metadata(metadata: str) -> CaseStudyCreate:
     try:
         case_study_data = CaseStudyCreate.model_validate_json(metadata)
     except Exception as e:
@@ -131,6 +122,20 @@ async def preview_case_study(
             status_code=400, 
             detail="At least one benefit must be of type 'environmental'"
         )
+    return case_study_data
+
+UPLOAD_DIR = "static/uploads"
+
+@router.post("/preview", response_model=CaseStudyDetailRead)
+async def preview_case_study(
+    metadata: str = Form(...),
+    file_methodology: Optional[UploadFile] = File(None),
+    file_dataset: Optional[UploadFile] = File(None),
+    file_logo: Optional[UploadFile] = File(None),
+    session: AsyncSession = Depends(get_session)
+):
+    # 1. Validation (Same as create)
+    case_study_data = validate_case_study_metadata(metadata)
 
     # 2. Fetch Related Data (Read-Only)
     # Tech
@@ -290,19 +295,7 @@ async def create_case_study(
     session: AsyncSession = Depends(get_session)
 ):
     # 1. Validation: Environmental Benefit
-    try:
-        # For Pydantic V2 use: model_validate_json
-        # For Pydantic V1 use: parse_raw
-        case_study_data = CaseStudyCreate.model_validate_json(metadata)
-    except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Invalid JSON metadata: {str(e)}")
-    
-    has_environmental = any(b.type_code == "environmental" for b in case_study_data.benefits)
-    if not has_environmental:
-        raise HTTPException(
-            status_code=400, 
-            detail="At least one benefit must be of type 'environmental'"
-        )
+    case_study_data = validate_case_study_metadata(metadata)
 
     # 2. File Saving Logic
     media_links = {}
@@ -319,8 +312,9 @@ async def create_case_study(
             ext = os.path.splitext(file.filename)[1]
             filename = f"{uuid.uuid4()}{ext}"
             file_path = os.path.join(UPLOAD_DIR, filename)
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+            async with aiofiles.open(file_path, "wb") as out_file:
+                while content := await file.read(1024 * 1024):  # 1MB chunks
+                    await out_file.write(content)
             media_links[field_name] = f"/static/uploads/{filename}"
 
     # 3. DB Transaction
