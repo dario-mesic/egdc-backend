@@ -164,13 +164,16 @@ async def search_case_studies(
     # 2. Fetch CaseStudy objects for those IDs (without joins to avoid duplicates)
     # 3. Apply sorting and pagination on the distinct set
     
-    # Step 1: Get distinct CaseStudy IDs that match all filters
+    # Get distinct CaseStudy IDs that match all filters
     distinct_ids_subquery = data_query.with_only_columns(CaseStudy.id).distinct().subquery()
     
-    # Step 2: Fetch CaseStudy objects for distinct IDs, sorted and paginated
-    # We query CaseStudy directly (no joins) to avoid duplicates, using the filtered IDs
-    order_col = CaseStudy.created_date if sort_by == 'created_date' else CaseStudy.title
-    
+    # 1. Define the primary sort column dynamically
+    if sort_by == 'created_date':
+        primary_sort = CaseStudy.created_date
+    else:
+        # For title, use lowercase to ensure Case-Insensitive sorting (A vs a)
+        primary_sort = func.lower(CaseStudy.title)
+
     ids_query = (
         select(CaseStudy)
         .where(CaseStudy.id.in_(select(distinct_ids_subquery.c.id)))
@@ -191,18 +194,15 @@ async def search_case_studies(
         )
     )
     
-    # Apply sorting
-    title_sort = func.lower(CaseStudy.title)
+    # 2. Apply sorting using the dynamic 'primary_sort' variable
     if sort_order == "desc":
         ids_query = ids_query.order_by(
-            title_sort.desc(),
-            CaseStudy.title.desc(),  # preserves visual order
-            CaseStudy.id.desc()      # guarantees stability
+            primary_sort.desc(),
+            CaseStudy.id.desc()  # Always use ID as a tie-breaker for stability
         )
     else:
         ids_query = ids_query.order_by(
-            title_sort.asc(),
-            CaseStudy.title.asc(),
+            primary_sort.asc(),
             CaseStudy.id.asc()
         )
     
