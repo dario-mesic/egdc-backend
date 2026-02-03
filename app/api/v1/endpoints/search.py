@@ -9,7 +9,7 @@ from app.models.references import (
     RefSector, RefFundingType, RefTechnology, RefCalculationType,
     RefBenefitType, RefBenefitUnit, RefOrganizationType
 )
-from app.models.organization import Organization, OrganizationSectorLink, ContactPoint
+from app.models.organization import Organization, ContactPoint
 
 router = APIRouter()
 
