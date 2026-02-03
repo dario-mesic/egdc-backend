@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlmodel import SQLModel
 from app.db.session import get_session, engine
 from app.db.init_db import init_db
-from app.models.references import *
+from app.models.references import RefSector, RefOrganizationType, RefFundingType, RefCalculationType, RefBenefitUnit, RefBenefitType, RefTechnology, RefCountry, RefLanguage
 from app.models.organization import Organization, ContactPoint
 from app.models.case_study import (
     CaseStudy, Address, Benefit, ImageObject, Methodology, Dataset,
