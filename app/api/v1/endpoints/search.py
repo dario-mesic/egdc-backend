@@ -224,74 +224,75 @@ async def search_case_studies(
 async def get_search_facets(session: AsyncSession = Depends(get_session)):
     """
     Returns codes and counts that exist in the whole dataset.
+    Fixed to count UNIQUE case studies per facet code.
     """
-    # 1. Sector (from Organization joined to CaseStudy via provider/funder/user)
-    # The requirement says "existence in the whole dataset"
-    # We'll check sectors associated with Case Studies.
     
-    # helper for executing and formatting
     async def get_counts(query):
         res = await session.execute(query)
         return [FacetItem(code=row[0], count=row[1]) for row in res.all() if row[0] is not None]
 
-    # Sector facets
+    # 1. Sector Facets
+    # Fix: Count distinct CaseStudy.id to avoid double-counting if a CS has 2 providers in same sector
     sector_query = (
-        select(Organization.sector_code, func.count(CaseStudy.id))
+        select(Organization.sector_code, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudyProviderLink, CaseStudyProviderLink.organization_id == Organization.id)
         .join(CaseStudy, CaseStudy.id == CaseStudyProviderLink.case_study_id)
         .group_by(Organization.sector_code)
     )
     sector_facets = await get_counts(sector_query)
 
-    # Tech facets
+    # 2. Tech facets (Usually 1:1, but distinct is safer)
     tech_query = (
-        select(CaseStudy.tech_code, func.count(CaseStudy.id))
+        select(CaseStudy.tech_code, func.count(func.distinct(CaseStudy.id)))
         .group_by(CaseStudy.tech_code)
     )
     tech_facets = await get_counts(tech_query)
 
-    # Funding Type facets
+    # 3. Funding Type facets
     funding_query = (
-        select(CaseStudy.funding_type_code, func.count(CaseStudy.id))
+        select(CaseStudy.funding_type_code, func.count(func.distinct(CaseStudy.id)))
         .group_by(CaseStudy.funding_type_code)
     )
     funding_facets = await get_counts(funding_query)
 
-    # Calculation Type facets
+    # 4. Calculation Type facets
     calc_query = (
-        select(CaseStudy.calc_type_code, func.count(CaseStudy.id))
+        select(CaseStudy.calc_type_code, func.count(func.distinct(CaseStudy.id)))
         .group_by(CaseStudy.calc_type_code)
     )
     calc_facets = await get_counts(calc_query)
 
-    # Country facets (from Address)
+    # 5. Country facets
+    # Fix: Count distinct CS IDs. If a CS has 2 addresses in "SWE", it should count as 1 for "SWE".
     country_query = (
-        select(Address.admin_unit_l1, func.count(CaseStudy.id))
+        select(Address.admin_unit_l1, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudy, CaseStudy.id == Address.case_study_id)
         .group_by(Address.admin_unit_l1)
     )
     country_facets = await get_counts(country_query)
 
-    # Organization Type facets
+    # 6. Organization Type facets
     org_type_query = (
-        select(Organization.org_type_code, func.count(CaseStudy.id))
+        select(Organization.org_type_code, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudyProviderLink, CaseStudyProviderLink.organization_id == Organization.id)
         .join(CaseStudy, CaseStudy.id == CaseStudyProviderLink.case_study_id)
         .group_by(Organization.org_type_code)
     )
     org_type_facets = await get_counts(org_type_query)
 
-    # Benefit Unit facets
+    # 7. Benefit Unit facets
+    # Fix: This was the biggest issue. 
+    # Example: If CS #1 has 3 benefits in 'tco2', it should count as 1 case study for 'tco2'.
     unit_query = (
-        select(Benefit.unit_code, func.count(CaseStudy.id))
+        select(Benefit.unit_code, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudy, CaseStudy.id == Benefit.case_study_id)
         .group_by(Benefit.unit_code)
     )
     unit_facets = await get_counts(unit_query)
 
-    # Benefit Type facets
+    # 8. Benefit Type facets
     type_query = (
-        select(Benefit.type_code, func.count(CaseStudy.id))
+        select(Benefit.type_code, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudy, CaseStudy.id == Benefit.case_study_id)
         .group_by(Benefit.type_code)
     )
