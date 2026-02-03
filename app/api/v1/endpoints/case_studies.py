@@ -1,10 +1,8 @@
 import os
-import shutil
 import uuid
 import aiofiles
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
-from pydantic import Json
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select, func
@@ -20,95 +18,96 @@ from app.models.references import (
     RefBenefitUnit, RefBenefitType
 )
 from app.schemas.case_study import CaseStudyCreate
+from app.schemas.pagination import PaginatedResponse
 
 router = APIRouter()
 
-from app.schemas.pagination import PaginatedResponse
+UPLOAD_DIR = "static/uploads"
 
-@router.get("/", response_model=PaginatedResponse[CaseStudySummaryRead])
-async def read_case_studies(
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, ge=1, le=100),
-    session: AsyncSession = Depends(get_session)
-):
-    # Calculate offset
-    offset = (page - 1) * limit
+# --- Helper Functions ---
 
-    # Get total count
-    count_query = select(func.count()).select_from(CaseStudy)
-    total_result = await session.execute(count_query)
-    total = total_result.scalar() or 0
-
-    # Optimized query for Summary View
-    query = select(CaseStudy).options(
+def get_case_study_loader_options(detailed: bool = False):
+    """
+    Returns the load options for CaseStudy queries.
+    Centralizes the logic to avoid code duplication across endpoints.
+    """
+    # Base options for all views (Summary & Detail)
+    options = [
         selectinload(CaseStudy.benefits).selectinload(Benefit.unit),
         selectinload(CaseStudy.benefits).selectinload(Benefit.type),
         selectinload(CaseStudy.funding_type),
-        # Load Providers with reduced Org info
-        selectinload(CaseStudy.is_provided_by).options(
-             selectinload(Organization.sector),
-             selectinload(Organization.org_type)
-        ),
-         selectinload(CaseStudy.is_funded_by).options(
-             selectinload(Organization.sector),
-             selectinload(Organization.org_type)
-        ),
         selectinload(CaseStudy.logo),
         selectinload(CaseStudy.addresses)
-    ).offset(offset).limit(limit)
+    ]
+
+    if not detailed:
+        # Summary view: reduced Org info
+        options.extend([
+            selectinload(CaseStudy.is_provided_by).options(
+                 selectinload(Organization.sector),
+                 selectinload(Organization.org_type)
+            ),
+             selectinload(CaseStudy.is_funded_by).options(
+                 selectinload(Organization.sector),
+                 selectinload(Organization.org_type)
+            ),
+        ])
+    else:
+        # Detail view: Full Org info + Tech/Calc/Links + Method/Dataset
+        options.extend([
+            selectinload(CaseStudy.tech),
+            selectinload(CaseStudy.calc_type),
+            selectinload(CaseStudy.methodology).selectinload(Methodology.language),
+            selectinload(CaseStudy.dataset).selectinload(Dataset.language),
+            # Full Org Trees
+            selectinload(CaseStudy.is_provided_by).options(
+                selectinload(Organization.sector),
+                selectinload(Organization.org_type),
+                selectinload(Organization.sub_sectors),
+                selectinload(Organization.contact_points)
+            ),
+            selectinload(CaseStudy.is_funded_by).options(
+                selectinload(Organization.sector),
+                selectinload(Organization.org_type),
+                selectinload(Organization.sub_sectors),
+                selectinload(Organization.contact_points)
+            ),
+            selectinload(CaseStudy.is_used_by).options(
+                selectinload(Organization.sector),
+                selectinload(Organization.org_type),
+                selectinload(Organization.sub_sectors),
+                selectinload(Organization.contact_points)
+            )
+        ])
+    return options
+
+async def fetch_organization_details(session: AsyncSession, org_id: int) -> Optional[Organization]:
+    """Helper to fetch a single organization with full details for Preview."""
+    if not org_id:
+        return None
+    query = select(Organization).where(Organization.id == org_id).options(
+        selectinload(Organization.sector),
+        selectinload(Organization.org_type),
+        selectinload(Organization.sub_sectors),
+        selectinload(Organization.contact_points)
+    )
+    res = await session.execute(query)
+    return res.scalars().first()
+
+async def save_file_async(file: Optional[UploadFile], upload_dir: str) -> Optional[str]:
+    """Helper to save uploaded files asynchronously."""
+    if not file or not file.filename:
+        return None
     
-    result = await session.execute(query)
-    items = result.scalars().all()
-
-    return PaginatedResponse(
-        total=total,
-        page=page,
-        limit=limit,
-        items=items
-    )
-
-@router.get("/{id}", response_model=CaseStudyDetailRead)
-async def read_case_study(id: int, session: AsyncSession = Depends(get_session)):
-    query = select(CaseStudy).where(CaseStudy.id == id).options(
-        selectinload(CaseStudy.benefits).selectinload(Benefit.unit),
-        selectinload(CaseStudy.benefits).selectinload(Benefit.type),
-        selectinload(CaseStudy.addresses),
-        selectinload(CaseStudy.tech),
-        selectinload(CaseStudy.calc_type),
-        selectinload(CaseStudy.funding_type),
-        selectinload(CaseStudy.logo),
-        selectinload(CaseStudy.methodology).selectinload(Methodology.language),
-        selectinload(CaseStudy.dataset).selectinload(Dataset.language),
-        # Full deep load for Detail View
-        selectinload(CaseStudy.is_provided_by).options(
-            selectinload(Organization.sector),
-            selectinload(Organization.org_type),
-            selectinload(Organization.sub_sectors),
-            selectinload(Organization.contact_points)
-        ),
-        selectinload(CaseStudy.is_funded_by).options(
-            selectinload(Organization.sector),
-            selectinload(Organization.org_type),
-            selectinload(Organization.sub_sectors),
-            selectinload(Organization.contact_points)
-        ),
-        selectinload(CaseStudy.is_used_by).options(
-            selectinload(Organization.sector),
-            selectinload(Organization.org_type),
-            selectinload(Organization.sub_sectors),
-            selectinload(Organization.contact_points)
-        )
-    )
-    result = await session.execute(query)
-    case_study = result.scalars().first()
-    if not case_study:
-        raise HTTPException(status_code=404, detail="Case study not found")
-    return case_study
-
-# Note: Full POST implementation would require complex input Pydantic models.
-# For this task, strict typing is requested. I will implement a simplified creation
-# assuming the user sends a structure matching the model.
-# In a real app, strict Pydantic CreateSchemas are preferred.
+    ext = os.path.splitext(file.filename)[1]
+    filename = f"{uuid.uuid4()}{ext}"
+    file_path = os.path.join(upload_dir, filename)
+    
+    async with aiofiles.open(file_path, "wb") as out_file:
+        while content := await file.read(1024 * 1024):  # 1MB chunks
+            await out_file.write(content)
+            
+    return f"/static/uploads/{filename}"
 
 def validate_case_study_metadata(metadata: str) -> CaseStudyCreate:
     try:
@@ -124,7 +123,47 @@ def validate_case_study_metadata(metadata: str) -> CaseStudyCreate:
         )
     return case_study_data
 
-UPLOAD_DIR = "static/uploads"
+# --- Endpoints ---
+
+@router.get("/", response_model=PaginatedResponse[CaseStudySummaryRead])
+async def read_case_studies(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    session: AsyncSession = Depends(get_session)
+):
+    offset = (page - 1) * limit
+
+    # Get total count
+    count_query = select(func.count()).select_from(CaseStudy)
+    total_result = await session.execute(count_query)
+    total = total_result.scalar() or 0
+
+    # Optimized query using helper
+    query = select(CaseStudy).options(
+        *get_case_study_loader_options(detailed=False)
+    ).offset(offset).limit(limit)
+    
+    result = await session.execute(query)
+    items = result.scalars().all()
+
+    return PaginatedResponse(
+        total=total,
+        page=page,
+        limit=limit,
+        items=items
+    )
+
+@router.get("/{id}", response_model=CaseStudyDetailRead)
+async def read_case_study(id: int, session: AsyncSession = Depends(get_session)):
+    # Optimized query using helper
+    query = select(CaseStudy).where(CaseStudy.id == id).options(
+        *get_case_study_loader_options(detailed=True)
+    )
+    result = await session.execute(query)
+    case_study = result.scalars().first()
+    if not case_study:
+        raise HTTPException(status_code=404, detail="Case study not found")
+    return case_study
 
 @router.post("/preview", response_model=CaseStudyDetailRead)
 async def preview_case_study(
@@ -134,60 +173,36 @@ async def preview_case_study(
     file_logo: Optional[UploadFile] = File(None),
     session: AsyncSession = Depends(get_session)
 ):
-    # 1. Validation (Same as create)
+    # 1. Validation
     case_study_data = validate_case_study_metadata(metadata)
 
     # 2. Fetch Related Data (Read-Only)
-    # Tech
     tech = None
     if case_study_data.tech_code:
         tech = await session.get(RefTechnology, case_study_data.tech_code)
     
-    # Calc Type
     calc_type = None
     if case_study_data.calc_type_code:
         calc_type = await session.get(RefCalculationType, case_study_data.calc_type_code)
 
-    # Funding Type
     funding_type = None
     if case_study_data.funding_type_code:
         funding_type = await session.get(RefFundingType, case_study_data.funding_type_code)
 
-    # Organizations
-    provider_orgs = []
-    if case_study_data.provider_org_id:
-        query = select(Organization).where(Organization.id == case_study_data.provider_org_id).options(
-            selectinload(Organization.sector),
-            selectinload(Organization.org_type),
-            selectinload(Organization.sub_sectors),
-            selectinload(Organization.contact_points)
-        )
-        res = await session.execute(query)
-        org = res.scalars().first()
-        if org:
-            # Convert to OrganizationDetailRead
-            provider_orgs.append(OrganizationDetailRead.model_validate(org))
+    # Helper to convert Org ID to List[OrganizationDetailRead]
+    async def get_org_read_list(org_id: Optional[int]) -> List[OrganizationDetailRead]:
+        if not org_id: return []
+        org = await fetch_organization_details(session, org_id)
+        return [OrganizationDetailRead.model_validate(org)] if org else []
 
-    funder_orgs = []
-    if case_study_data.funder_org_id:
-        query = select(Organization).where(Organization.id == case_study_data.funder_org_id).options(
-            selectinload(Organization.sector),
-            selectinload(Organization.org_type),
-            selectinload(Organization.sub_sectors),
-            selectinload(Organization.contact_points)
-        )
-        res = await session.execute(query)
-        org = res.scalars().first()
-        if org:
-            funder_orgs.append(OrganizationDetailRead.model_validate(org))
+    provider_orgs = await get_org_read_list(case_study_data.provider_org_id)
+    funder_orgs = await get_org_read_list(case_study_data.funder_org_id)
 
-    # Benefits
+    # Benefits Construction
     benefit_reads = []
-    # Collect all needed codes
     unit_codes = {b.unit_code for b in case_study_data.benefits}
     type_codes = {b.type_code for b in case_study_data.benefits}
     
-    # Fetch maps
     units_map = {}
     if unit_codes:
         res = await session.execute(select(RefBenefitUnit).where(RefBenefitUnit.code.in_(unit_codes)))
@@ -209,35 +224,38 @@ async def preview_case_study(
             )
         )
 
-    # Methodology
+    # Helper for Preview File Objects
+    async def create_preview_media(file_obj, lang_code, name_prefix) -> Tuple[Optional[object], Optional[object]]:
+        if not file_obj and not lang_code:
+            return None
+            
+        lang = None
+        if lang_code:
+            lang = await session.get(RefLanguage, lang_code)
+            
+        # Create Read model (MethodologyRead/DatasetRead)
+        # Note: We return a structure matching the Read schemas
+        # Using simple types here as Pydantic will validate
+        return {
+            "id": 0,
+            "name": file_obj.filename if file_obj else f"preview_{name_prefix}.ext",
+            "url": f"/static/uploads/preview_{uuid.uuid4()}",
+            "language": lang
+        }
+
     meth_read = None
     if file_methodology or case_study_data.methodology_language_code:
-        lang = None
-        if case_study_data.methodology_language_code:
-            lang = await session.get(RefLanguage, case_study_data.methodology_language_code)
-        
-        meth_read = MethodologyRead(
-            id=0,
-            name=file_methodology.filename if file_methodology else "preview_methodology.pdf",
-            url=f"/static/uploads/preview_{uuid.uuid4()}", # Dummy URL
-            language=lang
-        )
+        meth_read = await create_preview_media(file_methodology, case_study_data.methodology_language_code, "methodology")
+        # Ensure it matches Pydantic model structure if returned as dict, or instantiate object
+        if meth_read:
+            meth_read = MethodologyRead(**meth_read)
 
-    # Dataset
     data_read = None
     if file_dataset or case_study_data.dataset_language_code:
-        lang = None
-        if case_study_data.dataset_language_code:
-            lang = await session.get(RefLanguage, case_study_data.dataset_language_code)
-            
-        data_read = DatasetRead(
-            id=0,
-            name=file_dataset.filename if file_dataset else "preview_dataset.csv",
-            url=f"/static/uploads/preview_{uuid.uuid4()}",
-            language=lang
-        )
+        data_read = await create_preview_media(file_dataset, case_study_data.dataset_language_code, "dataset")
+        if data_read:
+            data_read = DatasetRead(**data_read)
 
-    # Logo
     logo_obj = None
     if file_logo:
         logo_obj = ImageObject(
@@ -247,16 +265,10 @@ async def preview_case_study(
         )
 
     # Addresses
-    address_objs = []
-    for i, a in enumerate(case_study_data.addresses):
-        address_objs.append(
-            Address(
-                id=i,
-                admin_unit_l1=a.admin_unit_l1,
-                post_name=a.post_name,
-                case_study_id=0
-            )
-        )
+    address_objs = [
+        Address(id=i, admin_unit_l1=a.admin_unit_l1, post_name=a.post_name, case_study_id=0)
+        for i, a in enumerate(case_study_data.addresses)
+    ]
 
     # Construct Response
     return CaseStudyDetailRead(
@@ -283,7 +295,7 @@ async def preview_case_study(
         
         is_provided_by=provider_orgs,
         is_funded_by=funder_orgs,
-        is_used_by=[] # Not in create form
+        is_used_by=[]
     )
 
 @router.post("/", response_model=CaseStudyDetailRead)
@@ -294,34 +306,22 @@ async def create_case_study(
     file_logo: UploadFile = File(...),
     session: AsyncSession = Depends(get_session)
 ):
-    # 1. Validation: Environmental Benefit
+    # 1. Validation
     case_study_data = validate_case_study_metadata(metadata)
 
-    # 2. File Saving Logic
+    # 2. File Saving Logic (Async Helper)
     media_links = {}
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     
-    files_to_process = [
-        ("methodology", file_methodology),
-        ("dataset", file_dataset),
-        ("logo", file_logo)
-    ]
-    
-    for field_name, file in files_to_process:
-        if file and file.filename:
-            ext = os.path.splitext(file.filename)[1]
-            filename = f"{uuid.uuid4()}{ext}"
-            file_path = os.path.join(UPLOAD_DIR, filename)
-            async with aiofiles.open(file_path, "wb") as out_file:
-                while content := await file.read(1024 * 1024):  # 1MB chunks
-                    await out_file.write(content)
-            media_links[field_name] = f"/static/uploads/{filename}"
+    media_links["methodology"] = await save_file_async(file_methodology, UPLOAD_DIR)
+    media_links["dataset"] = await save_file_async(file_dataset, UPLOAD_DIR)
+    media_links["logo"] = await save_file_async(file_logo, UPLOAD_DIR)
 
     # 3. DB Transaction
     async with session.begin():
         # Create Media Objects
         methodology_obj = None
-        if "methodology" in media_links:
+        if media_links.get("methodology"):
             methodology_obj = Methodology(
                 name=file_methodology.filename, 
                 url=media_links["methodology"],
@@ -330,7 +330,7 @@ async def create_case_study(
             session.add(methodology_obj)
         
         dataset_obj = None
-        if "dataset" in media_links:
+        if media_links.get("dataset"):
             dataset_obj = Dataset(
                 name=file_dataset.filename, 
                 url=media_links["dataset"],
@@ -339,11 +339,13 @@ async def create_case_study(
             session.add(dataset_obj)
             
         logo_obj = None
-        if "logo" in media_links:
-            logo_obj = ImageObject(url=media_links["logo"], alt_text=f"Logo for {case_study_data.title}")
+        if media_links.get("logo"):
+            logo_obj = ImageObject(
+                url=media_links["logo"], 
+                alt_text=f"Logo for {case_study_data.title}"
+            )
             session.add(logo_obj)
             
-        # Flush to get IDs for media objects
         await session.flush()
 
         # Create Case Study
@@ -363,61 +365,28 @@ async def create_case_study(
         session.add(db_case_study)
         await session.flush()
 
-        # Create Benefits
+        # Create Children
         for b in case_study_data.benefits:
-            benefit = Benefit(**b.model_dump(), case_study_id=db_case_study.id)
-            session.add(benefit)
+            session.add(Benefit(**b.model_dump(), case_study_id=db_case_study.id))
             
-        # Create Addresses
         for a in case_study_data.addresses:
-            addr = Address(**a.model_dump(), case_study_id=db_case_study.id)
-            session.add(addr)
+            session.add(Address(**a.model_dump(), case_study_id=db_case_study.id))
             
-        # Create Organization Links
-        provider_link = CaseStudyProviderLink(
+        # Links
+        session.add(CaseStudyProviderLink(
             case_study_id=db_case_study.id, 
             organization_id=case_study_data.provider_org_id
-        )
-        session.add(provider_link)
+        ))
         
         if case_study_data.funder_org_id:
-            funder_link = CaseStudyFunderLink(
+            session.add(CaseStudyFunderLink(
                 case_study_id=db_case_study.id, 
                 organization_id=case_study_data.funder_org_id
-            )
-            session.add(funder_link)
+            ))
 
-    # Note: session.begin() automatically commits on exit.
-    
-    # Reload with all relationships for the response_model (CaseStudyDetailRead)
+    # Re-fetch for response using helper
     query = select(CaseStudy).where(CaseStudy.id == db_case_study.id).options(
-        selectinload(CaseStudy.benefits).selectinload(Benefit.unit),
-        selectinload(CaseStudy.benefits).selectinload(Benefit.type),
-        selectinload(CaseStudy.addresses),
-        selectinload(CaseStudy.tech),
-        selectinload(CaseStudy.calc_type),
-        selectinload(CaseStudy.funding_type),
-        selectinload(CaseStudy.logo),
-        selectinload(CaseStudy.methodology).selectinload(Methodology.language),
-        selectinload(CaseStudy.dataset).selectinload(Dataset.language),
-        selectinload(CaseStudy.is_provided_by).options(
-            selectinload(Organization.sector),
-            selectinload(Organization.org_type),
-            selectinload(Organization.sub_sectors),
-            selectinload(Organization.contact_points)
-        ),
-        selectinload(CaseStudy.is_funded_by).options(
-            selectinload(Organization.sector),
-            selectinload(Organization.org_type),
-            selectinload(Organization.sub_sectors),
-            selectinload(Organization.contact_points)
-        ),
-        selectinload(CaseStudy.is_used_by).options(
-            selectinload(Organization.sector),
-            selectinload(Organization.org_type),
-            selectinload(Organization.sub_sectors),
-            selectinload(Organization.contact_points)
-        )
+        *get_case_study_loader_options(detailed=True)
     )
     result = await session.execute(query)
     return result.scalars().first()
