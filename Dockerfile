@@ -14,10 +14,8 @@ RUN apt-get update \
 
 COPY . .
 
-RUN pip install --no-cache-dir .
-
-RUN chown -R appuser:appgroup /app
-
+RUN pip install --no-cache-dir . \
+    && chown -R appuser:appgroup /app
 USER appuser
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
