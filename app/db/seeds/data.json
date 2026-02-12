@@ -804,30 +804,36 @@
     {
       "title": "DELMIA Apriso Manufacturing Operations Management",
       "short_description": "Digital twin solution for optimizing factory floor operations and reducing waste.",
-      "long_description": "The DELMIA-Apriso solution is a Manufacturing Operations Management tool which helps manufacturers transform global production lines by virtually modelling factory floor operations and live data transfer. This solution enables carbon savings from reduced energy consumption and reduced scrap waste achieved through the optimization of manufacturing processes.",
-      "problem_solved": "Inefficient manufacturing processes leading to high energy consumption and material waste.",
-      "created_date": "2026-01-12",
+      "long_description": "DELMIA Apriso is a Manufacturing Operations Management (MOM) solution that captures core MES functionalities to virtually model factory floor operations. It synchronizes global production networks, offering real-time visibility and control. By detecting defects earlier (improving the non-conformity rate) and enabling virtual technology transfer, it significantly reduces material scrap, energy consumption, and physical travel[cite: 346, 353, 409].",
+      "problem_solved": "Inefficient manufacturing processes leading to high rates of rework (non-conformities), material scrap, and unnecessary physical travel for technology transfer[cite: 352, 406].",
+      "created_date": "2024-04-01",
       "tech_code": "digital-twin",
       "calc_type_code": "ex-post",
       "funding_type_code": "private",
       "benefits": [
         {
           "name": "Scrap Waste Reduction",
-          "value": 25,
+          "value": 29,
           "unit_code": "percent",
           "type_code": "environmental"
         },
         {
-          "name": "Energy Consumption Reduction",
-          "value": 15,
-          "unit_code": "percent",
-          "type_code": "environmental"
-        },
-        {
-          "name": "CO2 Emissions Reduction",
-          "value": 380,
+          "name": "Net CO2 Emissions Savings",
+          "value": 5175,
           "unit_code": "tco2",
           "type_code": "environmental"
+        },
+        {
+          "name": "Material Cost Savings",
+          "value": 29,
+          "unit_code": "percent",
+          "type_code": "economic"
+        },
+        {
+          "name": "Reduced Technology Transfer Travel",
+          "value": 100,
+          "unit_code": "percent",
+          "type_code": "social"
         }
       ],
       "addresses": [
