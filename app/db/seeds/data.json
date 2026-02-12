@@ -374,10 +374,16 @@
           "type_code": "environmental"
         },
         {
-          "name": "Cost Savings",
+          "name": "Fuel Cost Savings",
           "value": 200000,
           "unit_code": "eur",
           "type_code": "economic"
+        },
+        {
+          "name": "Improved Port Worker Safety",
+          "value": 10,
+          "unit_code": "percent",
+          "type_code": "social"
         }
       ],
       "addresses": [
@@ -423,6 +429,12 @@
           "value": 250,
           "unit_code": "tco2",
           "type_code": "environmental"
+        },
+        {
+          "name": "Operational Cost Reduction",
+          "value": 12,
+          "unit_code": "percent",
+          "type_code": "economic"
         }
       ],
       "addresses": [
@@ -468,6 +480,12 @@
           "value": 20,
           "unit_code": "percent",
           "type_code": "economic"
+        },
+        {
+          "name": "Driver Safety Improvement",
+          "value": 15,
+          "unit_code": "percent",
+          "type_code": "social"
         }
       ],
       "addresses": [
@@ -513,6 +531,12 @@
           "value": 320,
           "unit_code": "tco2",
           "type_code": "environmental"
+        },
+        {
+          "name": "Utility Bill Reduction",
+          "value": 25,
+          "unit_code": "percent",
+          "type_code": "economic"
         }
       ],
       "addresses": [
@@ -552,6 +576,18 @@
           "value": 468,
           "unit_code": "tco2",
           "type_code": "environmental"
+        },
+        {
+          "name": "Operational Cost Savings",
+          "value": 15,
+          "unit_code": "percent",
+          "type_code": "economic"
+        },
+        {
+          "name": "Occupant Comfort Improvement",
+          "value": 20,
+          "unit_code": "percent",
+          "type_code": "social"
         }
       ],
       "addresses": [
@@ -597,6 +633,12 @@
           "value": 500,
           "unit_code": "tco2",
           "type_code": "environmental"
+        },
+        {
+          "name": "Infrastructure Capital Savings",
+          "value": 1000000,
+          "unit_code": "eur",
+          "type_code": "economic"
         }
       ],
       "addresses": [
@@ -643,6 +685,12 @@
           "value": 18,
           "unit_code": "percent",
           "type_code": "environmental"
+        },
+        {
+          "name": "Energy Cost Savings",
+          "value": 15,
+          "unit_code": "percent",
+          "type_code": "economic"
         }
       ],
       "addresses": [
@@ -688,6 +736,12 @@
           "value": 45,
           "unit_code": "tco2",
           "type_code": "environmental"
+        },
+        {
+          "name": "Herbicide Cost Savings",
+          "value": 30,
+          "unit_code": "percent",
+          "type_code": "economic"
         }
       ],
       "addresses": [
@@ -734,6 +788,18 @@
           "value": 85,
           "unit_code": "tco2",
           "type_code": "environmental"
+        },
+        {
+          "name": "Supply Chain Cost Savings",
+          "value": 15,
+          "unit_code": "percent",
+          "type_code": "economic"
+        },
+        {
+          "name": "Improved Food Safety",
+          "value": 100,
+          "unit_code": "percent",
+          "type_code": "social"
         }
       ],
       "addresses": [
@@ -777,6 +843,18 @@
           "value": 20,
           "unit_code": "percent",
           "type_code": "environmental"
+        },
+        {
+          "name": "Waste Management Cost Savings",
+          "value": 15,
+          "unit_code": "percent",
+          "type_code": "economic"
+        },
+        {
+          "name": "Citizen Quality of Life Improvement",
+          "value": 10,
+          "unit_code": "percent",
+          "type_code": "social"
         }
       ],
       "addresses": [
@@ -804,8 +882,8 @@
     {
       "title": "DELMIA Apriso Manufacturing Operations Management",
       "short_description": "Digital twin solution for optimizing factory floor operations and reducing waste.",
-      "long_description": "DELMIA Apriso is a Manufacturing Operations Management (MOM) solution that captures core MES functionalities to virtually model factory floor operations. It synchronizes global production networks, offering real-time visibility and control. By detecting defects earlier (improving the non-conformity rate) and enabling virtual technology transfer, it significantly reduces material scrap, energy consumption, and physical travel[cite: 346, 353, 409].",
-      "problem_solved": "Inefficient manufacturing processes leading to high rates of rework (non-conformities), material scrap, and unnecessary physical travel for technology transfer[cite: 352, 406].",
+      "long_description": "DELMIA Apriso is a Manufacturing Operations Management (MOM) solution that captures core MES functionalities to virtually model factory floor operations. It synchronizes global production networks, offering real-time visibility and control. By detecting defects earlier (improving the non-conformity rate) and enabling virtual technology transfer, it significantly reduces material scrap, energy consumption, and physical travel.",
+      "problem_solved": "Inefficient manufacturing processes leading to high rates of rework (non-conformities), material scrap, and unnecessary physical travel for technology transfer.",
       "created_date": "2024-04-01",
       "tech_code": "digital-twin",
       "calc_type_code": "ex-post",
