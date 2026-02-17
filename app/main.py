@@ -18,10 +18,9 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
-import os
-
-# Ensure upload directory exists for persistence
-os.makedirs("static/uploads", exist_ok=True)
+# Ensure upload directory exists - Commented out for Vercel (Read-only FS)
+# If running locally, you might want to uncomment this or ensure the directory exists in your repo.
+# os.makedirs("static/uploads", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
