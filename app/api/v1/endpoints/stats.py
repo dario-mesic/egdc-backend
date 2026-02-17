@@ -3,9 +3,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.db.session import get_session
-from app.models.case_study import CaseStudy, Address, Benefit
+from app.models.case_study import CaseStudy, Address, Benefit, CaseStudyProviderLink
 from app.models.references import RefCountry
-from app.schemas.stats import StatsResponse, CountryStat, BenefitStat, CityStat
+from app.schemas.stats import StatsResponse, CountryStat, BenefitStat, CityStat, ScoreboardStats, SectorImpact
+from app.models.organization import Organization
 
 router = APIRouter()
 
@@ -74,4 +75,54 @@ async def get_dashboard_stats(session: AsyncSession = Depends(get_session)) -> A
         for row in kpi_results
     ]
 
-    return StatsResponse(map_data=map_data, kpi_data=kpi_data)
+    # 3. Scoreboard: Total Net Carbon Impact (value where is_net_carbon_impact=True AND status='published')
+    # Assuming 'published' status is required.
+    from app.models.case_study import CaseStudyStatus
+    
+    scoreboard_base_query = (
+        select(CaseStudy.id)
+        .where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
+        .subquery()
+    )
+    
+    # Total Impact
+    impact_query = (
+        select(func.sum(Benefit.value))
+        .join(CaseStudy, Benefit.case_study_id == CaseStudy.id)
+        .where(
+            CaseStudy.status == CaseStudyStatus.PUBLISHED,
+            Benefit.is_net_carbon_impact == True
+        )
+    )
+    impact_result = await session.execute(impact_query)
+    total_impact = impact_result.scalar() or 0.0
+
+    # Impact by Sector
+    sector_impact_query = (
+        select(
+            Organization.sector_code,
+            func.sum(Benefit.value)
+        )
+        .join(CaseStudyProviderLink, CaseStudyProviderLink.organization_id == Organization.id)
+        .join(CaseStudy, CaseStudy.id == CaseStudyProviderLink.case_study_id)
+        .join(Benefit, Benefit.case_study_id == CaseStudy.id)
+        .where(
+            CaseStudy.status == CaseStudyStatus.PUBLISHED,
+            Benefit.is_net_carbon_impact == True
+        )
+        .group_by(Organization.sector_code)
+    )
+    sector_impact_result = await session.execute(sector_impact_query)
+    
+    sector_impacts = [
+        SectorImpact(sector_code=row[0], total_value=row[1]) 
+        for row in sector_impact_result.all() 
+        if row[0] is not None
+    ]
+
+    scoreboard_stats = ScoreboardStats(
+        total_net_carbon_impact=total_impact,
+        breakdown_by_sector=sector_impacts
+    )
+
+    return StatsResponse(map_data=map_data, kpi_data=kpi_data, scoreboard=scoreboard_stats)

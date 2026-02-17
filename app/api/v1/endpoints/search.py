@@ -7,7 +7,7 @@ from app.db.session import get_session
 from app.models.case_study import CaseStudy, Address, Benefit, CaseStudySummaryRead, CaseStudyProviderLink
 from app.models.references import (
     RefSector, RefFundingType, RefTechnology, RefCalculationType,
-    RefBenefitType, RefBenefitUnit, RefOrganizationType
+    RefBenefitType, RefBenefitUnit, RefOrganizationType, RefCountry
 )
 from app.models.organization import Organization, ContactPoint
 
@@ -97,7 +97,8 @@ async def search_case_studies(
                                .outerjoin(CaseStudy.funding_type, full=False)\
                                .outerjoin(CaseStudy.tech, full=False)\
                                .outerjoin(CaseStudy.calc_type, full=False)\
-                               .outerjoin(CaseStudy.addresses, full=False)
+                               .outerjoin(CaseStudy.addresses, full=False)\
+                               .outerjoin(RefCountry, Address.admin_unit_l1 == RefCountry.code, full=False)
         
         if match_type == 'exact':
             # Exact Match: Strict equality for Title, Regex Word Boundary for others
@@ -119,6 +120,7 @@ async def search_case_studies(
                     ContactPoint.has_email == q,
                     RefSector.label == q,
                     Address.admin_unit_l1 == q,
+                    RefCountry.label == q, # Match full country name
                     Address.post_name == q
                 )
             )
@@ -150,6 +152,7 @@ async def search_case_studies(
                     RefOrganizationType.label.ilike(search_term),
                     RefFundingType.label.ilike(search_term),
                     Address.admin_unit_l1.ilike(search_term),
+                    RefCountry.label.ilike(search_term), # Match full country name partial
                     Address.post_name.ilike(search_term),
                     RefTechnology.label.ilike(search_term),
                     RefCalculationType.label.ilike(search_term),
@@ -159,7 +162,8 @@ async def search_case_studies(
                     func.similarity(CaseStudy.title, q) > fuzzy_threshold,
                     func.similarity(Organization.name, q) > fuzzy_threshold,
                     func.similarity(RefSector.label, q) > fuzzy_threshold,
-                    func.similarity(Address.post_name, q) > fuzzy_threshold
+                    func.similarity(Address.post_name, q) > fuzzy_threshold,
+                    func.similarity(RefCountry.label, q) > fuzzy_threshold # Fuzzy Country Name
                 )
             )
 

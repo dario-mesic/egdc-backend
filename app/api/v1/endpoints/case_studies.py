@@ -19,6 +19,8 @@ from app.models.references import (
 )
 from app.schemas.case_study import CaseStudyCreate
 from app.schemas.pagination import PaginatedResponse
+from app.models.user import User, UserRole
+from app.api.deps import get_current_user, get_current_active_user
 
 router = APIRouter()
 
@@ -115,12 +117,6 @@ def validate_case_study_metadata(metadata: str) -> CaseStudyCreate:
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Invalid JSON metadata: {str(e)}")
 
-    has_environmental = any(b.type_code == "environmental" for b in case_study_data.benefits)
-    if not has_environmental:
-        raise HTTPException(
-            status_code=400, 
-            detail="At least one benefit must be of type 'environmental'"
-        )
     return case_study_data
 
 # --- Endpoints ---
@@ -304,11 +300,49 @@ async def create_case_study(
     file_methodology: UploadFile = File(...),
     file_dataset: UploadFile = File(...),
     file_logo: UploadFile = File(...),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     # 1. Validation
     case_study_data = validate_case_study_metadata(metadata)
+    
+    # 1.1 Strict Business Rules Validation
+    
+    # Rule 1: Mandatory Net Carbon Impact (Exactly ONE, and type must be environmental)
+    net_impact_benefits = [
+        b for b in case_study_data.benefits 
+        if b.is_net_carbon_impact
+    ]
+    
+    if len(net_impact_benefits) != 1:
+        raise HTTPException(
+            status_code=422,
+            detail="Exactly one benefit must be marked as 'Net Carbon Impact' (is_net_carbon_impact=True)."
+        )
+        
+    if net_impact_benefits[0].type_code != 'environmental':
+        raise HTTPException(
+            status_code=422,
+            detail="The 'Net Carbon Impact' benefit must have type_code='environmental'."
+        )
 
+    # Rule 2: Funding URL Validation
+    if case_study_data.funding_type_code == 'public' and not case_study_data.funding_programme_url:
+        raise HTTPException(
+            status_code=422,
+            detail="Funding Programme URL is required when Funding Type is 'public'."
+        )
+
+    # 1.2 Status & Owner Enforcement
+    from app.models.case_study import CaseStudyStatus
+    
+    initial_status = CaseStudyStatus.DRAFT # Default
+    owner_id = current_user.id
+    
+    if current_user.role == UserRole.DATA_OWNER:
+        # Rule 3: Data Owner submission forces Pending Approval
+        initial_status = CaseStudyStatus.PENDING_APPROVAL
+    
     # 2. File Saving Logic (Async Helper)
     media_links = {}
     os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -358,9 +392,12 @@ async def create_case_study(
             tech_code=case_study_data.tech_code,
             calc_type_code=case_study_data.calc_type_code,
             funding_type_code=case_study_data.funding_type_code,
+            funding_programme_url=case_study_data.funding_programme_url,
             methodology_id=methodology_obj.id if methodology_obj else None,
             dataset_id=dataset_obj.id if dataset_obj else None,
             logo_id=logo_obj.id if logo_obj else None,
+            created_by=owner_id,
+            status=initial_status
         )
         session.add(db_case_study)
         await session.flush()

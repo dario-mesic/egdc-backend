@@ -4,6 +4,7 @@ from app.db.session import engine
 from app.models.references import *
 from app.models.organization import *
 from app.models.case_study import *
+from app.models.user import *
 
 async def init_db():
     async with engine.begin() as conn:

@@ -7,6 +7,8 @@ class BenefitCreate(BaseModel):
     value: int
     unit_code: str
     type_code: str
+    functional_unit: Optional[str] = None
+    is_net_carbon_impact: bool = False
 
 class AddressCreate(BaseModel):
     admin_unit_l1: str
@@ -22,6 +24,7 @@ class CaseStudyCreate(BaseModel):
     tech_code: Optional[str] = None
     calc_type_code: Optional[str] = None
     funding_type_code: Optional[str] = None
+    funding_programme_url: Optional[str] = None
     
     benefits: List[BenefitCreate] = []
     addresses: List[AddressCreate] = []

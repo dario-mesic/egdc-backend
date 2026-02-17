@@ -8,15 +8,13 @@ from app.db.session import get_session, engine
 from app.db.init_db import init_db
 from app.models.references import RefSector, RefOrganizationType, RefFundingType, RefCalculationType, RefBenefitUnit, RefBenefitType, RefTechnology, RefCountry, RefLanguage
 from app.models.organization import Organization, ContactPoint
-from app.models.case_study import (
-    CaseStudy, Address, Benefit, ImageObject, Methodology, Dataset,
-)
+from app.models.case_study import CaseStudy, Address, Benefit, ImageObject, Methodology, Dataset, CaseStudyStatus
+from app.models.user import User, UserRole
+from app.core.security import get_password_hash
 import os
 import aiofiles
 
 router = APIRouter()
-
-from sqlalchemy import select
 
 @router.post("/seed")
 async def seed_data(session: AsyncSession = Depends(get_session)):
@@ -26,6 +24,29 @@ async def seed_data(session: AsyncSession = Depends(get_session)):
 
     # 1. Initialize DB (Create Tables)
     await init_db()
+
+    # 1.5 Seed Users
+    users = [
+        {"email": "admin@example.com", "role": UserRole.ADMIN, "hashed_password": get_password_hash("password123")},
+        {"email": "custodian@example.com", "role": UserRole.CUSTODIAN, "hashed_password": get_password_hash("password123")},
+        {"email": "owner@example.com", "role": UserRole.DATA_OWNER, "hashed_password": get_password_hash("password123")},
+    ]
+    
+    data_owner_id = None
+    
+    for u in users:
+        result = await session.execute(select(User).where(User.email == u["email"]))
+        existing_user = result.scalars().first()
+        if not existing_user:
+            user = User(**u)
+            session.add(user)
+            await session.flush()
+            if user.role == UserRole.DATA_OWNER:
+                data_owner_id = user.id
+        else:
+            # Update password if needed, but for now just get ID
+            if existing_user.role == UserRole.DATA_OWNER:
+                data_owner_id = existing_user.id
 
     # 3. Load Data
     data_path = "app/db/seeds/data.json"
@@ -134,6 +155,8 @@ async def seed_data(session: AsyncSession = Depends(get_session)):
             
             # Create Main Entity
             case_study = CaseStudy(**case_data)
+            case_study.created_by = data_owner_id
+            case_study.status = CaseStudyStatus.PUBLISHED
             
             # Initialize M2M lists to empty to avoid implicit lazy load on append
             case_study.is_provided_by = []
@@ -164,7 +187,8 @@ async def seed_data(session: AsyncSession = Depends(get_session)):
             
             # Nested Lists
             for b in benefits_data:
-                session.add(Benefit(**b, case_study_id=case_study.id))
+                benefit = Benefit(**b, case_study_id=case_study.id)
+                session.add(benefit)
             
             for a in addresses_data:
                 session.add(Address(**a, case_study_id=case_study.id))

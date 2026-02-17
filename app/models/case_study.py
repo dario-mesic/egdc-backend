@@ -3,6 +3,12 @@ from datetime import date
 from sqlmodel import SQLModel, Field, Relationship
 from .references import RefBenefitUnit, RefBenefitType, RefSector, RefTechnology, RefCalculationType, RefFundingType, RefLanguage
 from .organization import Organization, OrganizationSummaryRead, OrganizationDetailRead
+from enum import Enum
+
+class CaseStudyStatus(str, Enum):
+    DRAFT = "draft"
+    PENDING_APPROVAL = "pending_approval"
+    PUBLISHED = "published"
 
 # --- Entities for One-to-One Relationships ---
 class ImageObject(SQLModel, table=True):
@@ -10,6 +16,12 @@ class ImageObject(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     url: str
     alt_text: Optional[str] = None
+
+class Document(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    url: str
+    description: Optional[str] = None
 
 class Methodology(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -58,6 +70,9 @@ class CaseStudyBase(SQLModel):
     long_description: Optional[str] = None
     problem_solved: Optional[str] = None
     created_date: Optional[date] = None
+    
+    status: CaseStudyStatus = Field(default=CaseStudyStatus.DRAFT)
+    funding_programme_url: Optional[str] = None
 
     tech_code: Optional[str] = Field(default=None, foreign_key="ref_technology.code")
     calc_type_code: Optional[str] = Field(default=None, foreign_key="ref_calculation_type.code")
@@ -66,6 +81,8 @@ class CaseStudyBase(SQLModel):
     logo_id: Optional[int] = Field(default=None, foreign_key="image_object.id")
     methodology_id: Optional[int] = Field(default=None, foreign_key="methodology.id")
     dataset_id: Optional[int] = Field(default=None, foreign_key="dataset.id")
+    additional_document_id: Optional[int] = Field(default=None, foreign_key="document.id")
+    created_by: Optional[int] = Field(default=None, foreign_key="user.id")
 
 
 # --- Core CaseStudy Model (Table) ---
@@ -81,6 +98,7 @@ class CaseStudy(CaseStudyBase, table=True):
     logo: Optional[ImageObject] = Relationship()
     methodology: Optional[Methodology] = Relationship()
     dataset: Optional[Dataset] = Relationship()
+    additional_document: Optional[Document] = Relationship()
 
     addresses: List["Address"] = Relationship(back_populates="case_study")
     benefits: List["Benefit"] = Relationship(back_populates="case_study")
@@ -102,6 +120,8 @@ class Benefit(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     value: int
+    functional_unit: Optional[str] = None
+    is_net_carbon_impact: bool = Field(default=False)
     unit_code: str = Field(foreign_key="ref_benefit_unit.code")
     type_code: str = Field(foreign_key="ref_benefit_type.code")
     case_study_id: Optional[int] = Field(default=None, foreign_key="case_study.id")
@@ -114,6 +134,8 @@ class BenefitRead(SQLModel):
     id: int
     name: str
     value: int
+    functional_unit: Optional[str] = None
+    is_net_carbon_impact: bool = False
     unit: Optional[RefBenefitUnit]
     type: Optional[RefBenefitType]
 

@@ -360,30 +360,37 @@
     {
       "title": "Optimisation of port processes by Ericsson",
       "short_description": "Using 5G to enhance real-time info exchange in the Port of Livorno.",
-      "long_description": "This solution uses 5G technologies to enhance the exchange of real-time information among actors in a port's terminal process (Port of Livorno, Italy). It focuses on reducing movements of cargo handling equipment to lower fuel consumption. The Port of Livorno case was originally developed in collaboration between the Port of Livorno, Ericsson, Fondazione Eni Enrico Mattei (FEEM) and the National Inter-University CNIT as part of the EU H2020 project Corealis.",
+      "long_description": "This solution uses 5G technologies to enhance the exchange of real-time information among actors in a port's terminal process. It focuses on reducing movements of cargo handling equipment to lower fuel consumption.",
       "problem_solved": "Inefficient exchange of real-time information leading to excessive fuel consumption.",
       "created_date": "2026-01-12",
       "tech_code": "5g",
       "calc_type_code": "ex-ante",
       "funding_type_code": "public-private",
+      "funding_programme_url": "https://cordis.europa.eu/project/id/768788",
       "benefits": [
         {
-          "name": "CO2 Reduction",
+          "name": "Net Carbon Impact",
           "value": 111,
           "unit_code": "tco2",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per terminal annually"
         },
         {
           "name": "Fuel Cost Savings",
           "value": 200000,
           "unit_code": "eur",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per terminal annually"
         },
         {
           "name": "Improved Port Worker Safety",
           "value": 10,
           "unit_code": "percent",
-          "type_code": "social"
+          "type_code": "social",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per terminal annually"
         }
       ],
       "addresses": [
@@ -411,7 +418,7 @@
     {
       "title": "Logic TMS by AddSecure",
       "short_description": "Cloud-based transport management system with AI-enabled route optimization.",
-      "long_description": "Logic TMS is a transport management system offered as an end-to-end solution for carriers. Logic TMS brings the entire order management process to a modern cloud-based platform, providing real-time control and insights that help optimize every stage of the transport process, including fleet and fuel utilization and order management. The AI-enabled AutoPlanner tool helps calculate best route combinations, highlighting associated fuel and cost savings.",
+      "long_description": "Logic TMS is a transport management system offered as an end-to-end solution for carriers, optimizing fleet and fuel utilization.",
       "problem_solved": "Inefficient route planning and fleet management leading to excess fuel consumption and higher costs.",
       "created_date": "2026-01-12",
       "tech_code": "fleet-management",
@@ -422,19 +429,25 @@
           "name": "Fuel Reduction",
           "value": 15,
           "unit_code": "percent",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per transport fleet"
         },
         {
-          "name": "CO2 Emissions Savings",
+          "name": "Net Carbon Impact",
           "value": 250,
           "unit_code": "tco2",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per transport fleet annually"
         },
         {
           "name": "Operational Cost Reduction",
           "value": 12,
           "unit_code": "percent",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per transport fleet"
         }
       ],
       "addresses": [
@@ -462,30 +475,37 @@
     {
       "title": "PREDRI Fleet Optimization Solution",
       "short_description": "AI-powered fleet optimization with on-board monitoring for efficient driving.",
-      "long_description": "PREDRI is a fleet optimization solution that leverages on-board monitoring with Artificial Intelligence to optimize routes and encourage efficient and safe driving. Continuous reporting of mechanical parameters helps to anticipate failures and prevent high damage, ultimately extending the life of various mechanical parts. Together with an integrated refueling and spare part stock system, PREDRI increases fuel efficiency, fine-tunes maintenance, and extends the life of exhaustive spare parts.",
+      "long_description": "PREDRI is a fleet optimization solution that leverages on-board monitoring with Artificial Intelligence to optimize routes and encourage efficient and safe driving.",
       "problem_solved": "Inefficient fleet operations, excessive fuel consumption, and premature mechanical failures.",
       "created_date": "2026-01-12",
       "tech_code": "ai",
       "calc_type_code": "ex-post",
       "funding_type_code": "public",
+      "funding_programme_url": "https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/horizon-europe_en",
       "benefits": [
         {
-          "name": "Fuel Efficiency Improvement",
-          "value": 12,
-          "unit_code": "percent",
-          "type_code": "environmental"
+          "name": "Net Carbon Impact",
+          "value": 120,
+          "unit_code": "tco2",
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per 100 vehicles annually"
         },
         {
           "name": "Maintenance Cost Reduction",
           "value": 20,
           "unit_code": "percent",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per 100 vehicles annually"
         },
         {
           "name": "Driver Safety Improvement",
           "value": 15,
           "unit_code": "percent",
-          "type_code": "social"
+          "type_code": "social",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per driver"
         }
       ],
       "addresses": [
@@ -513,7 +533,7 @@
     {
       "title": "c-BEMS Cloud Building Energy Management",
       "short_description": "Cloud-based SaaS building energy management with AI-powered optimization.",
-      "long_description": "c-BEMS is a cloud-based SaaS (software-as-a-service) tool for the Building Energy Management System (BEMS) that achieves high energy savings for any kind of buildings through building automation technologies. It implements remote control of multi-zonal HVAC/lighting systems via Wi-Fi connected sensors in a unique IoT platform by employing AI/ML algorithms and Model Predictive Control to automate the energy/lighting consumption behaviour detection, thermal modelling of the building, energy demand prediction (forecasting) tool and optimization along with an added feature of a CO2 operational emissions calculator.",
+      "long_description": "c-BEMS implements remote control of multi-zonal HVAC/lighting systems via Wi-Fi connected sensors in a unique IoT platform by employing AI/ML algorithms.",
       "problem_solved": "High energy consumption in buildings due to lack of intelligent automation and predictive control.",
       "created_date": "2026-01-12",
       "tech_code": "ai",
@@ -524,19 +544,25 @@
           "name": "Energy Savings",
           "value": 30,
           "unit_code": "percent",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per building block"
         },
         {
-          "name": "CO2 Emissions Reduction",
+          "name": "Net Carbon Impact",
           "value": 320,
           "unit_code": "tco2",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per building block annually"
         },
         {
           "name": "Utility Bill Reduction",
           "value": 25,
           "unit_code": "percent",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per building block annually"
         }
       ],
       "addresses": [
@@ -564,7 +590,7 @@
     {
       "title": "High-Performance Building Management System",
       "short_description": "Automating management processes to enable emissions savings in buildings.",
-      "long_description": "This solution automates management processes to enable emissions savings from energy reduction in non-residential buildings. It allows for control of air quality, temperature, occupant comfort, lighting and heating. These commercial systems provide high levels of control which optimize space, time and energy use.",
+      "long_description": "This solution automates management processes to enable emissions savings from energy reduction in non-residential buildings. It allows for control of air quality, temperature, occupant comfort, lighting and heating.",
       "problem_solved": "High energy consumption in commercial buildings due to inefficient manual controls.",
       "created_date": "2026-01-12",
       "tech_code": "automation",
@@ -572,22 +598,28 @@
       "funding_type_code": "private",
       "benefits": [
         {
-          "name": "Environmental Impact",
+          "name": "Net Carbon Impact",
           "value": 468,
           "unit_code": "tco2",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per commercial building annually"
         },
         {
           "name": "Operational Cost Savings",
           "value": 15,
           "unit_code": "percent",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per commercial building annually"
         },
         {
           "name": "Occupant Comfort Improvement",
           "value": 20,
           "unit_code": "percent",
-          "type_code": "social"
+          "type_code": "social",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per building zone"
         }
       ],
       "addresses": [
@@ -615,30 +647,37 @@
     {
       "title": "Dynamic Line Rating Platform",
       "short_description": "IoT-based dynamic line rating system for renewable energy integration.",
-      "long_description": "The Dynamic Line Rating Platform is based on the use of dynamic line rating system that enables Electric System Operators to operate transmission lines using real time data and forecasts. The system encompasses conductor sensors and local weather stations, IoT communications, a cloud platform and an algorithm that computes the real time thermal rating and the forecasting. With this system, the System Operator can make use of the idle capacity that already exists in the lines, increasing the capacity of the network to integrate renewable energy into the power system. The deployment of the DLR allows to avoid manufacture of steel structures, use of big cranes and their corresponding emissions.",
+      "long_description": "The Dynamic Line Rating Platform enables Electric System Operators to operate transmission lines using real time data and forecasts, increasing the capacity of the network to integrate renewable energy into the power system.",
       "problem_solved": "Limited transmission line capacity hindering renewable energy integration and causing unnecessary infrastructure construction.",
       "created_date": "2026-01-12",
       "tech_code": "iot",
       "calc_type_code": "ex-post",
       "funding_type_code": "public-private",
+      "funding_programme_url": "https://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/horizon-europe_en",
       "benefits": [
         {
           "name": "Renewable Energy Integration Increase",
           "value": 25,
           "unit_code": "percent",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per transmission line"
         },
         {
-          "name": "Infrastructure Emissions Avoided",
+          "name": "Net Carbon Impact",
           "value": 500,
           "unit_code": "tco2",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per transmission line project"
         },
         {
           "name": "Infrastructure Capital Savings",
           "value": 1000000,
           "unit_code": "eur",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per transmission line project"
         }
       ],
       "addresses": [
@@ -667,7 +706,7 @@
     {
       "title": "IBM Flex Platform for Demand-Side Flexibility",
       "short_description": "Connecting and aggregating demand-side flexibility across building fleets.",
-      "long_description": "The IBM Flex Platform is a solution that can help governments, municipalities and corporations, through the use of emerging technologies such as IoT and AI, to connect and aggregate their demand-side flexibility across a large fleet of commercial buildings, heat pumps, heating and cooling elements, batteries, solar panels and electric vehicles (EV) charging stations.",
+      "long_description": "The IBM Flex Platform aggregates demand-side flexibility across a large fleet of commercial buildings, heat pumps, batteries, solar panels and electric vehicles.",
       "problem_solved": "Lack of coordination and optimization of distributed energy resources and demand-side flexibility.",
       "created_date": "2026-01-12",
       "tech_code": "iot",
@@ -675,22 +714,28 @@
       "funding_type_code": "private",
       "benefits": [
         {
-          "name": "Grid Flexibility Improvement",
-          "value": 35,
-          "unit_code": "percent",
-          "type_code": "environmental"
+          "name": "Net Carbon Impact",
+          "value": 410,
+          "unit_code": "tco2",
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per commercial fleet annually"
         },
         {
           "name": "Peak Energy Reduction",
           "value": 18,
           "unit_code": "percent",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per commercial fleet"
         },
         {
           "name": "Energy Cost Savings",
           "value": 15,
           "unit_code": "percent",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per commercial fleet annually"
         }
       ],
       "addresses": [
@@ -718,7 +763,7 @@
     {
       "title": "Ekobot Autonomous Weed Control Robot",
       "short_description": "5G-connected autonomous robot for mechanical weed control in agriculture.",
-      "long_description": "Ekobot is an autonomous, electric field robot for mechanical weed control, which is connected to Telia's 5G network. It allows for efficient and environmentally conscious farming. Ekobot can identify and mechanically remove weeds using advanced camera sensors and AI. It enables reductions in the use of chemicals on the field for healthier crops, soil, and production.",
+      "long_description": "Ekobot is an autonomous, electric field robot for mechanical weed control, which is connected to Telia's 5G network. It identifies and mechanically removes weeds using advanced camera sensors and AI.",
       "problem_solved": "Excessive use of chemical herbicides in agriculture causing environmental damage and soil degradation.",
       "created_date": "2026-01-12",
       "tech_code": "robotics",
@@ -729,19 +774,25 @@
           "name": "Herbicide Reduction",
           "value": 90,
           "unit_code": "percent",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per hectare"
         },
         {
-          "name": "CO2 Emissions Reduction",
+          "name": "Net Carbon Impact",
           "value": 45,
           "unit_code": "tco2",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per farm annually"
         },
         {
           "name": "Herbicide Cost Savings",
           "value": 30,
           "unit_code": "percent",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per farm annually"
         }
       ],
       "addresses": [
@@ -770,7 +821,7 @@
     {
       "title": "GlobeTrack Fish Stock Tracking Solution",
       "short_description": "Blockchain-based cold-chain tracking for sustainable fish stock transport.",
-      "long_description": "GlobeTrack by Atea is a blockchain solution that tracks fish stock transport across cold-chain stages from Norway to a municipal district in Sweden. This tracking technology monitors food stock data metrics such as temperature, location during transport etc. to enable reduced fish stock wastage, more efficient and sustainable value chains and to improve food quality and traceability for customers.",
+      "long_description": "GlobeTrack by Atea is a blockchain solution that tracks fish stock transport across cold-chain stages from Norway to a municipal district in Sweden. It monitors food stock data metrics such as temperature.",
       "problem_solved": "Food waste and lack of traceability in cold-chain fish transport leading to quality issues and sustainability concerns.",
       "created_date": "2026-01-12",
       "tech_code": "blockchain",
@@ -781,25 +832,33 @@
           "name": "Food Waste Reduction",
           "value": 40,
           "unit_code": "percent",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per supply route"
         },
         {
-          "name": "CO2 Emissions from Waste Avoided",
+          "name": "Net Carbon Impact",
           "value": 85,
           "unit_code": "tco2",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per supply chain annually"
         },
         {
           "name": "Supply Chain Cost Savings",
           "value": 15,
           "unit_code": "percent",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per supply route"
         },
         {
           "name": "Improved Food Safety",
           "value": 100,
           "unit_code": "percent",
-          "type_code": "social"
+          "type_code": "social",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per supply chain"
         }
       ],
       "addresses": [
@@ -831,30 +890,45 @@
     {
       "title": "Integrated Operations Center (IOC) for Nicosia",
       "short_description": "Digital enablement platform for Nicosia Municipality Smart City.",
-      "long_description": "The Integrated Operations Center platform is a digital enablement platform that increases productivity, efficiency and growth through agile introduction and largely automated utilization of digital operational technology assets and capabilities. It is part of the Smart City project of the Nicosia municipality in Cyprus in cooperation with Cyta, where among other operations, it is also used to provide information on waste bin fillings and traffic information using video analytics to reduce overall transport emissions and pollution levels. The main objective of Smart Nicosia project is the development and use of new technological means that will improve the management and functionality of the urban environment in the city of Nicosia.",
+      "long_description": "The Integrated Operations Center platform is a digital enablement platform that increases productivity, efficiency and growth through agile introduction and largely automated utilization of digital operational technology assets and capabilities.",
       "problem_solved": "Inefficient management of urban environment (waste, traffic) in Nicosia.",
       "created_date": "2026-01-12",
       "tech_code": "iot",
       "calc_type_code": "ex-post",
       "funding_type_code": "public",
+      "funding_programme_url": "https://ec.europa.eu/regional_policy/",
       "benefits": [
+        {
+          "name": "Net Carbon Impact",
+          "value": 180,
+          "unit_code": "tco2",
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per municipality annually"
+        },
         {
           "name": "Transport Emissions Reduction",
           "value": 20,
           "unit_code": "percent",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per traffic zone"
         },
         {
           "name": "Waste Management Cost Savings",
           "value": 15,
           "unit_code": "percent",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per municipality annually"
         },
         {
           "name": "Citizen Quality of Life Improvement",
           "value": 10,
           "unit_code": "percent",
-          "type_code": "social"
+          "type_code": "social",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per citizen"
         }
       ],
       "addresses": [
@@ -882,7 +956,7 @@
     {
       "title": "DELMIA Apriso Manufacturing Operations Management",
       "short_description": "Digital twin solution for optimizing factory floor operations and reducing waste.",
-      "long_description": "DELMIA Apriso is a Manufacturing Operations Management (MOM) solution that captures core MES functionalities to virtually model factory floor operations. It synchronizes global production networks, offering real-time visibility and control. By detecting defects earlier (improving the non-conformity rate) and enabling virtual technology transfer, it significantly reduces material scrap, energy consumption, and physical travel.",
+      "long_description": "DELMIA Apriso is a Manufacturing Operations Management (MOM) solution that captures core MES functionalities to virtually model factory floor operations. It synchronizes global production networks, offering real-time visibility and control.",
       "problem_solved": "Inefficient manufacturing processes leading to high rates of rework (non-conformities), material scrap, and unnecessary physical travel for technology transfer.",
       "created_date": "2024-04-01",
       "tech_code": "digital-twin",
@@ -893,25 +967,33 @@
           "name": "Scrap Waste Reduction",
           "value": 29,
           "unit_code": "percent",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per production line"
         },
         {
-          "name": "Net CO2 Emissions Savings",
+          "name": "Net Carbon Impact",
           "value": 5175,
           "unit_code": "tco2",
-          "type_code": "environmental"
+          "type_code": "environmental",
+          "is_net_carbon_impact": true,
+          "functional_unit": "per vehicle manufactured"
         },
         {
           "name": "Material Cost Savings",
           "value": 29,
           "unit_code": "percent",
-          "type_code": "economic"
+          "type_code": "economic",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per production line annually"
         },
         {
           "name": "Reduced Technology Transfer Travel",
           "value": 100,
           "unit_code": "percent",
-          "type_code": "social"
+          "type_code": "social",
+          "is_net_carbon_impact": false,
+          "functional_unit": "per worker"
         }
       ],
       "addresses": [
