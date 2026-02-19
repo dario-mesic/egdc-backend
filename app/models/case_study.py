@@ -23,6 +23,11 @@ class Document(SQLModel, table=True):
     url: str
     description: Optional[str] = None
 
+class DocumentRead(SQLModel):
+    id: int
+    name: str
+    url: str
+
 class Methodology(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
@@ -172,6 +177,7 @@ class CaseStudyDetailRead(CaseStudyBase):
     logo: Optional[ImageObject] = None
     methodology: Optional[MethodologyRead] = None
     dataset: Optional[DatasetRead] = None
+    additional_document: Optional[DocumentRead] = None
     
     addresses: List[Address] = []
     benefits: List[BenefitRead] = [] 

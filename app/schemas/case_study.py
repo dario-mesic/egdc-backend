@@ -35,3 +35,4 @@ class CaseStudyCreate(BaseModel):
 
     methodology_language_code: Optional[str] = None
     dataset_language_code: Optional[str] = None
+    additional_document_id: Optional[int] = None

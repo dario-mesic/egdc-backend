@@ -10,7 +10,7 @@ from app.db.session import get_session
 from app.models.case_study import (
     CaseStudy, Benefit, Address, CaseStudySummaryRead, CaseStudyDetailRead,
     CaseStudyProviderLink, CaseStudyFunderLink, ImageObject, Methodology, Dataset,
-    MethodologyRead, DatasetRead, BenefitRead
+    MethodologyRead, DatasetRead, BenefitRead, Document, DocumentRead
 )
 from app.models.organization import Organization, OrganizationDetailRead
 from app.models.references import (
@@ -39,7 +39,8 @@ def get_case_study_loader_options(detailed: bool = False):
         selectinload(CaseStudy.benefits).selectinload(Benefit.type),
         selectinload(CaseStudy.funding_type),
         selectinload(CaseStudy.logo),
-        selectinload(CaseStudy.addresses)
+        selectinload(CaseStudy.addresses),
+        selectinload(CaseStudy.additional_document)
     ]
 
     if not detailed:
@@ -167,6 +168,7 @@ async def preview_case_study(
     file_methodology: Optional[UploadFile] = File(None),
     file_dataset: Optional[UploadFile] = File(None),
     file_logo: Optional[UploadFile] = File(None),
+    file_additional_document: Optional[UploadFile] = File(None),
     session: AsyncSession = Depends(get_session)
 ):
     # 1. Validation
@@ -259,6 +261,23 @@ async def preview_case_study(
             url=f"/static/uploads/preview_logo_{uuid.uuid4()}",
             alt_text=f"Logo for {case_study_data.title}"
         )
+    
+    additional_doc_read = None
+    if file_additional_document or case_study_data.additional_document_id:
+        if file_additional_document:
+            additional_doc_read = DocumentRead(
+                id=0,
+                name=file_additional_document.filename,
+                url=f"/static/uploads/preview_doc_{uuid.uuid4()}"
+            )
+        elif case_study_data.additional_document_id:
+            db_doc = await session.get(Document, case_study_data.additional_document_id)
+            if db_doc:
+                additional_doc_read = DocumentRead(
+                    id=db_doc.id,
+                    name=db_doc.name,
+                    url=db_doc.url
+                )
 
     # Addresses
     address_objs = [
@@ -285,6 +304,7 @@ async def preview_case_study(
         logo=logo_obj,
         methodology=meth_read,
         dataset=data_read,
+        additional_document=additional_doc_read,
         
         addresses=address_objs,
         benefits=benefit_reads,
@@ -300,6 +320,7 @@ async def create_case_study(
     file_methodology: UploadFile = File(...),
     file_dataset: UploadFile = File(...),
     file_logo: UploadFile = File(...),
+    file_additional_document: Optional[UploadFile] = File(None),
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
@@ -350,9 +371,10 @@ async def create_case_study(
     media_links["methodology"] = await save_file_async(file_methodology, UPLOAD_DIR)
     media_links["dataset"] = await save_file_async(file_dataset, UPLOAD_DIR)
     media_links["logo"] = await save_file_async(file_logo, UPLOAD_DIR)
+    media_links["additional_document"] = await save_file_async(file_additional_document, UPLOAD_DIR)
 
     # 3. DB Transaction
-    async with session.begin():
+    try:
         # Create Media Objects
         methodology_obj = None
         if media_links.get("methodology"):
@@ -380,6 +402,17 @@ async def create_case_study(
             )
             session.add(logo_obj)
             
+        additional_document_obj = None
+        if media_links.get("additional_document"):
+            additional_document_obj = Document(
+                name=file_additional_document.filename,
+                url=media_links["additional_document"]
+            )
+            session.add(additional_document_obj)
+        elif case_study_data.additional_document_id:
+            # If a separate document ID was sent instead of a file
+            additional_document_obj = await session.get(Document, case_study_data.additional_document_id)
+            
         await session.flush()
 
         # Create Case Study
@@ -396,6 +429,7 @@ async def create_case_study(
             methodology_id=methodology_obj.id if methodology_obj else None,
             dataset_id=dataset_obj.id if dataset_obj else None,
             logo_id=logo_obj.id if logo_obj else None,
+            additional_document_id=additional_document_obj.id if additional_document_obj else None,
             created_by=owner_id,
             status=initial_status
         )
@@ -420,6 +454,11 @@ async def create_case_study(
                 case_study_id=db_case_study.id, 
                 organization_id=case_study_data.funder_org_id
             ))
+
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise e
 
     # Re-fetch for response using helper
     query = select(CaseStudy).where(CaseStudy.id == db_case_study.id).options(

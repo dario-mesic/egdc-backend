@@ -3,9 +3,38 @@ import json
 import os
 
 BASE_URL = "http://localhost:8000/api/v1/case-studies/"
+LOGIN_URL = "http://localhost:8000/api/v1/login/access-token"
+
+def get_auth_token():
+    # Login credentials matching one of your seeded Data Owner users
+    # Change these if you used different credentials in your seed.py
+    login_data = {
+        "username": "owner@example.com", 
+        "password": "password123"             
+    }
+    print(f"Authenticating at {LOGIN_URL}...")
+    response = requests.post(LOGIN_URL, data=login_data)
+    
+    if response.status_code == 200:
+        print("Authentication successful.")
+        return response.json().get("access_token")
+    else:
+        print("Login failed! Please check your test credentials.")
+        print(response.text)
+        return None
 
 def test_create_case_study():
-    # Prepare metadata
+    # 1. Get the JWT Token
+    token = get_auth_token()
+    if not token:
+        return
+
+    # Add token to headers
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    # 2. Prepare metadata with ALL the new parameters
     metadata = {
         "title": "Company Case Study",
         "short_description": "Short description for Company company case study",
@@ -14,13 +43,27 @@ def test_create_case_study():
         "created_date": "2026-01-15",
         "tech_code": "5g",
         "calc_type_code": "ex-ante",
-        "funding_type_code": "private",
+        
+        # Changed to 'public' to test the new URL validation rule
+        "funding_type_code": "public", 
+        "funding_programme_url": "https://ec.europa.eu/horizon-europe", 
+        
         "benefits": [
             {
-                "name": "Environmental Impact",
+                "name": "Net Carbon Impact",
                 "value": 100,
                 "unit_code": "tco2",
-                "type_code": "environmental"
+                "type_code": "environmental",
+                "is_net_carbon_impact": True,         # NEW: Mandatory flag
+                "functional_unit": "per base station" # NEW: Functional unit
+            },
+            {
+                "name": "Operational Cost Savings",
+                "value": 15,
+                "unit_code": "percent",
+                "type_code": "economic",
+                "is_net_carbon_impact": False,        # NEW: Mandatory flag
+                "functional_unit": "per base station" # NEW: Functional unit
             }
         ],
         "addresses": [
@@ -35,12 +78,20 @@ def test_create_case_study():
         "dataset_language_code": "en"
     }
 
-    # Files to upload
-    files = {
-        "file_methodology": ("Company Brand Guidelines.pdf", open("scripts/Company Brand Guidelines.pdf", "rb"), "application/pdf"),
-        "file_dataset": ("Company - overview.xlsx", open("scripts/Company - overview.xlsx", "rb"), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-        "file_logo": ("Company_logo.png", open("scripts/Company_logo.png", "rb"), "image/png")
-    }
+    print("Preparing files...")
+    # 3. Files to upload (including the new additional_document)
+    try:
+        files = {
+            "file_methodology": ("Company Brand Guidelines.pdf", open("scripts/Company Brand Guidelines.pdf", "rb"), "application/pdf"),
+            "file_dataset": ("Company - overview.xlsx", open("scripts/Company - overview.xlsx", "rb"), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            "file_logo": ("Company_logo.png", open("scripts/Company_logo.png", "rb"), "image/png"),
+            
+            # NEW: Testing the additional document upload (reusing the PDF to save you time)
+            "file_additional_document": ("Extra_Documentation.pdf", open("scripts/Company Brand Guidelines.pdf", "rb"), "application/pdf")
+        }
+    except FileNotFoundError as e:
+        print(f"Error: Missing test file - {e}")
+        return
 
     # Multipart data
     data = {
@@ -49,14 +100,19 @@ def test_create_case_study():
 
     print("Sending POST request to:", BASE_URL)
     try:
-        response = requests.post(BASE_URL, data=data, files=files)
+        # Pass the headers containing the JWT token
+        response = requests.post(BASE_URL, headers=headers, data=data, files=files)
         print("Status Code:", response.status_code)
-        if response.status_code == 200:
-            print("Success!")
+        
+        if response.status_code in [200, 201]:
+            print("Success! Case study created.")
             print(json.dumps(response.json(), indent=2))
         else:
             print("Error Details:")
-            print(response.text)
+            try:
+                print(json.dumps(response.json(), indent=2))
+            except:
+                print(response.text)
     except Exception as e:
         print("Request failed:", e)
     finally:
