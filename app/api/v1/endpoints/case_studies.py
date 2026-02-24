@@ -358,6 +358,12 @@ async def create_case_study(
                 status_code=422, 
                 detail="Title, short description, and provider organization are required for pending approval status."
             )
+            
+        if not case_study_data.addresses or len(case_study_data.addresses) == 0:
+            raise HTTPException(
+                status_code=422,
+                detail="At least one address is required for pending approval status."
+            )
 
         # Rule 1: Mandatory Net Carbon Impact (Exactly ONE, and type must be environmental)
         net_impact_benefits = [
@@ -543,6 +549,12 @@ async def update_case_study(
             raise HTTPException(
                 status_code=422, 
                 detail="Title, short description, and provider organization are required for pending approval status."
+            )
+
+        if not case_study_data.addresses or len(case_study_data.addresses) == 0:
+            raise HTTPException(
+                status_code=422,
+                detail="At least one address is required for pending approval status."
             )
 
         net_impact_benefits = [
