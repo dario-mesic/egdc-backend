@@ -9,6 +9,7 @@ class CaseStudyStatus(str, Enum):
     DRAFT = "draft"
     PENDING_APPROVAL = "pending_approval"
     PUBLISHED = "published"
+    DECLINED = "declined"  # Added declined status for Custodian logic
 
 # --- Entities for One-to-One Relationships ---
 class ImageObject(SQLModel, table=True):
@@ -73,14 +74,15 @@ class CaseStudyUserLink(SQLModel, table=True):
 
 # --- Base Model (Shared Fields) ---
 class CaseStudyBase(SQLModel):
-    title: str
-    short_description: str
+    title: Optional[str] = None
+    short_description: Optional[str] = None
     long_description: Optional[str] = None
     problem_solved: Optional[str] = None
     created_date: Optional[date] = None
     
     status: CaseStudyStatus = Field(default=CaseStudyStatus.DRAFT)
     funding_programme_url: Optional[str] = None
+    rejection_comment: Optional[str] = None
 
     tech_code: Optional[str] = Field(default=None, foreign_key="ref_technology.code")
     calc_type_code: Optional[str] = Field(default=None, foreign_key="ref_calculation_type.code")
@@ -97,6 +99,10 @@ class CaseStudyBase(SQLModel):
 class CaseStudy(CaseStudyBase, table=True):
     __tablename__ = "case_study"
     id: Optional[int] = Field(default=None, primary_key=True)
+    system_created_at: Optional[str] = Field(
+        default=None, 
+        sa_column_kwargs={"server_default": "now()"}
+    )
 
     # Key differences: Relationships are defined here for SQLAlchemy
     tech: Optional[RefTechnology] = Relationship()
@@ -150,8 +156,8 @@ class BenefitRead(SQLModel):
 # --- Read Schemas (Pydantic Response) ---
 class CaseStudySummaryRead(SQLModel):
     id: int
-    title: str
-    short_description: str
+    title: Optional[str] = None
+    short_description: Optional[str] = None
     benefits: List[BenefitRead] = []
     
     # Organization Info (Name, Sector)
@@ -166,6 +172,10 @@ class CaseStudySummaryRead(SQLModel):
     
     # Addresses (Country, Post Name)
     addresses: List[Address] = []
+    
+    system_created_at: Optional[str] = None
+    rejection_comment: Optional[str] = None
+    status: CaseStudyStatus
 
 
 class CaseStudyDetailRead(CaseStudyBase):
@@ -189,3 +199,5 @@ class CaseStudyDetailRead(CaseStudyBase):
     is_provided_by: List[OrganizationDetailRead] = []
     is_funded_by: List[OrganizationDetailRead] = []
     is_used_by: List[OrganizationDetailRead] = []
+
+    system_created_at: Optional[str] = None

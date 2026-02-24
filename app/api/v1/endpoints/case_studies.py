@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from app.db.session import get_session
 from app.models.case_study import (
     CaseStudy, Benefit, Address, CaseStudySummaryRead, CaseStudyDetailRead,
@@ -17,7 +17,8 @@ from app.models.references import (
     RefTechnology, RefCalculationType, RefFundingType, RefLanguage, 
     RefBenefitUnit, RefBenefitType
 )
-from app.schemas.case_study import CaseStudyCreate
+from app.models.case_study import CaseStudyStatus
+from app.schemas.case_study import CaseStudyCreate, CaseStudyStatusUpdate, CaseStudyStatusUpdate
 from app.schemas.pagination import PaginatedResponse
 from app.models.user import User, UserRole
 from app.api.deps import get_current_user, get_current_active_user
@@ -340,42 +341,51 @@ async def create_case_study(
     # 1. Validation
     case_study_data = validate_case_study_metadata(metadata)
     
+    initial_status = CaseStudyStatus.DRAFT
+    if case_study_data.status in ["pending_approval", CaseStudyStatus.PENDING_APPROVAL.value]:
+        initial_status = CaseStudyStatus.PENDING_APPROVAL
+    elif case_study_data.status in ["published", CaseStudyStatus.PUBLISHED.value]:
+        if current_user.role in [UserRole.ADMIN, UserRole.CUSTODIAN]:
+            initial_status = CaseStudyStatus.PUBLISHED
+        else:
+            initial_status = CaseStudyStatus.PENDING_APPROVAL
+            
     # 1.1 Strict Business Rules Validation
-    
-    # Rule 1: Mandatory Net Carbon Impact (Exactly ONE, and type must be environmental)
-    net_impact_benefits = [
-        b for b in case_study_data.benefits 
-        if b.is_net_carbon_impact
-    ]
-    
-    if len(net_impact_benefits) != 1:
-        raise HTTPException(
-            status_code=422,
-            detail="Exactly one benefit must be marked as 'Net Carbon Impact' (is_net_carbon_impact=True)."
-        )
-        
-    if net_impact_benefits[0].type_code != 'environmental':
-        raise HTTPException(
-            status_code=422,
-            detail="The 'Net Carbon Impact' benefit must have type_code='environmental'."
-        )
+    if initial_status in [CaseStudyStatus.PENDING_APPROVAL, CaseStudyStatus.PUBLISHED]:
+        # Check mandatory fields
+        if not case_study_data.title or not case_study_data.short_description or not case_study_data.provider_org_id:
+            raise HTTPException(
+                status_code=422, 
+                detail="Title, short description, and provider organization are required for pending approval status."
+            )
 
-    # Rule 2: Funding URL Validation
-    if case_study_data.funding_type_code == 'public' and not case_study_data.funding_programme_url:
-        raise HTTPException(
-            status_code=422,
-            detail="Funding Programme URL is required when Funding Type is 'public'."
-        )
+        # Rule 1: Mandatory Net Carbon Impact (Exactly ONE, and type must be environmental)
+        net_impact_benefits = [
+            b for b in case_study_data.benefits 
+            if b.is_net_carbon_impact
+        ]
+        
+        if len(net_impact_benefits) != 1:
+            raise HTTPException(
+                status_code=422,
+                detail="Exactly one benefit must be marked as 'Net Carbon Impact' (is_net_carbon_impact=True)."
+            )
+            
+        if net_impact_benefits[0].type_code != 'environmental':
+            raise HTTPException(
+                status_code=422,
+                detail="The 'Net Carbon Impact' benefit must have type_code='environmental'."
+            )
+
+        # Rule 2: Funding URL Validation
+        if case_study_data.funding_type_code == 'public' and not case_study_data.funding_programme_url:
+            raise HTTPException(
+                status_code=422,
+                detail="Funding Programme URL is required when Funding Type is 'public'."
+            )
 
     # 1.2 Status & Owner Enforcement
-    from app.models.case_study import CaseStudyStatus
-    
-    initial_status = CaseStudyStatus.DRAFT # Default
     owner_id = current_user.id
-    
-    if current_user.role == UserRole.DATA_OWNER:
-        # Rule 3: Data Owner submission forces Pending Approval
-        initial_status = CaseStudyStatus.PENDING_APPROVAL
     
     # 2. File Saving Logic (Async Helper)
     media_links = {}
@@ -464,10 +474,11 @@ async def create_case_study(
             session.add(Address(**a.model_dump(), case_study_id=db_case_study.id))
             
         # Links
-        session.add(CaseStudyProviderLink(
-            case_study_id=db_case_study.id, 
-            organization_id=case_study_data.provider_org_id
-        ))
+        if case_study_data.provider_org_id:
+            session.add(CaseStudyProviderLink(
+                case_study_id=db_case_study.id, 
+                organization_id=case_study_data.provider_org_id
+            ))
         
         if case_study_data.funder_org_id:
             session.add(CaseStudyFunderLink(
@@ -484,5 +495,186 @@ async def create_case_study(
     query = select(CaseStudy).where(CaseStudy.id == db_case_study.id).options(
         *get_case_study_loader_options(detailed=True)
     )
+    result = await session.execute(query)
+    return result.scalars().first()
+
+@router.put("/{id}", response_model=CaseStudyDetailRead)
+async def update_case_study(
+    id: int,
+    metadata: str = Form(...), 
+    file_methodology: Optional[UploadFile] = File(None),
+    file_dataset: Optional[UploadFile] = File(None),
+    file_logo: Optional[UploadFile] = File(None),
+    file_additional_document: Optional[UploadFile] = File(None),
+    methodology_language: Optional[str] = Form(None),
+    dataset_language: Optional[str] = Form(None),
+    additional_document_language: Optional[str] = Form(None),
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+) -> CaseStudyDetailRead:
+    # Fetch existing
+    query = select(CaseStudy).where(CaseStudy.id == id).options(
+        *get_case_study_loader_options(detailed=True)
+    )
+    result = await session.execute(query)
+    db_case_study = result.scalars().first()
+    
+    if not db_case_study:
+        raise HTTPException(status_code=404, detail="Case study not found")
+        
+    if db_case_study.created_by != current_user.id and current_user.role not in [UserRole.ADMIN, UserRole.CUSTODIAN]:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this case study")
+        
+    # Validation
+    case_study_data = validate_case_study_metadata(metadata)
+    
+    new_status = CaseStudyStatus.DRAFT
+    if case_study_data.status in ["pending_approval", CaseStudyStatus.PENDING_APPROVAL.value]:
+        new_status = CaseStudyStatus.PENDING_APPROVAL
+    elif case_study_data.status in ["published", CaseStudyStatus.PUBLISHED.value]:
+        if current_user.role in [UserRole.ADMIN, UserRole.CUSTODIAN]:
+            new_status = CaseStudyStatus.PUBLISHED
+        else:
+            new_status = CaseStudyStatus.PENDING_APPROVAL
+            
+    # Strict validation if submitting for approval
+    if new_status in [CaseStudyStatus.PENDING_APPROVAL, CaseStudyStatus.PUBLISHED]:
+        if not case_study_data.title or not case_study_data.short_description or not case_study_data.provider_org_id:
+            raise HTTPException(
+                status_code=422, 
+                detail="Title, short description, and provider organization are required for pending approval status."
+            )
+
+        net_impact_benefits = [
+            b for b in case_study_data.benefits 
+            if b.is_net_carbon_impact
+        ]
+        if len(net_impact_benefits) != 1:
+            raise HTTPException(status_code=422, detail="Exactly one benefit must be marked as 'Net Carbon Impact'.")
+        if net_impact_benefits[0].type_code != 'environmental':
+            raise HTTPException(status_code=422, detail="The 'Net Carbon Impact' benefit must have type_code='environmental'.")
+        if case_study_data.funding_type_code == 'public' and not case_study_data.funding_programme_url:
+            raise HTTPException(status_code=422, detail="Funding Programme URL is required when Funding Type is 'public'.")
+
+    # File logic
+    media_links = {}
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    media_links["methodology"] = await save_file_async(file_methodology, UPLOAD_DIR)
+    media_links["dataset"] = await save_file_async(file_dataset, UPLOAD_DIR)
+    media_links["logo"] = await save_file_async(file_logo, UPLOAD_DIR)
+    media_links["additional_document"] = await save_file_async(file_additional_document, UPLOAD_DIR)
+
+    try:
+        if media_links.get("methodology"):
+            meth_lang = methodology_language or case_study_data.methodology_language or "en"
+            meth_obj = Methodology(name=file_methodology.filename, url=media_links["methodology"], language_code=meth_lang)
+            session.add(meth_obj)
+            await session.flush()
+            db_case_study.methodology_id = meth_obj.id
+
+        if media_links.get("dataset"):
+            data_lang = dataset_language or case_study_data.dataset_language or "en"
+            data_obj = Dataset(name=file_dataset.filename, url=media_links["dataset"], language_code=data_lang)
+            session.add(data_obj)
+            await session.flush()
+            db_case_study.dataset_id = data_obj.id
+
+        if media_links.get("logo"):
+            logo_obj = ImageObject(url=media_links["logo"], alt_text=f"Logo for {case_study_data.title}")
+            session.add(logo_obj)
+            await session.flush()
+            db_case_study.logo_id = logo_obj.id
+
+        if media_links.get("additional_document"):
+            add_doc_lang = additional_document_language or case_study_data.additional_document_language or "en"
+            add_doc_obj = Document(name=file_additional_document.filename, url=media_links["additional_document"], language_code=add_doc_lang)
+            session.add(add_doc_obj)
+            await session.flush()
+            db_case_study.additional_document_id = add_doc_obj.id
+        elif case_study_data.additional_document_id:
+            add_doc_lang = additional_document_language or case_study_data.additional_document_language
+            db_case_study.additional_document_id = case_study_data.additional_document_id
+            if add_doc_lang:
+                doc_obj = await session.get(Document, case_study_data.additional_document_id)
+                if doc_obj:
+                    doc_obj.language_code = add_doc_lang
+                    session.add(doc_obj)
+
+        # Update metadata
+        db_case_study.title = case_study_data.title
+        db_case_study.short_description = case_study_data.short_description
+        db_case_study.long_description = case_study_data.long_description
+        db_case_study.problem_solved = case_study_data.problem_solved
+        db_case_study.created_date = case_study_data.created_date
+        db_case_study.tech_code = case_study_data.tech_code
+        db_case_study.calc_type_code = case_study_data.calc_type_code
+        db_case_study.funding_type_code = case_study_data.funding_type_code
+        db_case_study.funding_programme_url = case_study_data.funding_programme_url
+        
+        # Status upgrade processing
+        db_case_study.status = new_status
+        if new_status in [CaseStudyStatus.PENDING_APPROVAL, CaseStudyStatus.PUBLISHED]:
+            db_case_study.rejection_comment = None
+
+        # Overwrite relations (Benefits, Addresses, Links)
+        await session.execute(delete(Benefit).where(Benefit.case_study_id == id))
+        await session.execute(delete(Address).where(Address.case_study_id == id))
+        await session.execute(delete(CaseStudyProviderLink).where(CaseStudyProviderLink.case_study_id == id))
+        await session.execute(delete(CaseStudyFunderLink).where(CaseStudyFunderLink.case_study_id == id))
+        await session.flush()
+
+        for b in case_study_data.benefits:
+            session.add(Benefit(**b.model_dump(), case_study_id=id))
+            
+        for a in case_study_data.addresses:
+            session.add(Address(**a.model_dump(), case_study_id=id))
+            
+        if case_study_data.provider_org_id:
+            session.add(CaseStudyProviderLink(case_study_id=id, organization_id=case_study_data.provider_org_id))
+        
+        if case_study_data.funder_org_id:
+            session.add(CaseStudyFunderLink(case_study_id=id, organization_id=case_study_data.funder_org_id))
+
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise e
+
+    # Return refreshed
+    query = select(CaseStudy).where(CaseStudy.id == id).options(*get_case_study_loader_options(detailed=True))
+    result = await session.execute(query)
+    return result.scalars().first()
+
+
+@router.patch("/{id}/review", response_model=CaseStudyDetailRead)
+async def review_case_study(
+    id: int,
+    status_update: CaseStudyStatusUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in [UserRole.ADMIN, UserRole.CUSTODIAN]:
+        raise HTTPException(status_code=403, detail="Not authorized to review case studies")
+        
+    query = select(CaseStudy).where(CaseStudy.id == id).options(*get_case_study_loader_options(detailed=True))
+    result = await session.execute(query)
+    db_case_study = result.scalars().first()
+    
+    if not db_case_study:
+        raise HTTPException(status_code=404, detail="Case study not found")
+
+    new_status_str = status_update.status
+    if new_status_str in ["published", CaseStudyStatus.PUBLISHED.value, "approved"]:
+        db_case_study.status = CaseStudyStatus.PUBLISHED
+        db_case_study.rejection_comment = None
+    elif new_status_str in ["draft", "declined", CaseStudyStatus.DECLINED.value]:
+        db_case_study.status = CaseStudyStatus.DRAFT
+        db_case_study.rejection_comment = status_update.rejection_comment
+    else:
+        raise HTTPException(status_code=422, detail="Invalid review status.")
+
+    await session.commit()
+    
+    query = select(CaseStudy).where(CaseStudy.id == id).options(*get_case_study_loader_options(detailed=True))
     result = await session.execute(query)
     return result.scalars().first()

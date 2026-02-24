@@ -15,11 +15,13 @@ class AddressCreate(BaseModel):
     post_name: Optional[str] = None
 
 class CaseStudyCreate(BaseModel):
-    title: str
-    short_description: str
+    title: Optional[str] = None
+    short_description: Optional[str] = None
     long_description: Optional[str] = None
     problem_solved: Optional[str] = None
     created_date: Optional[date] = None
+    
+    status: Optional[str] = "draft"
     
     tech_code: Optional[str] = None
     calc_type_code: Optional[str] = None
@@ -29,7 +31,7 @@ class CaseStudyCreate(BaseModel):
     benefits: List[BenefitCreate] = []
     addresses: List[AddressCreate] = []
     
-    provider_org_id: int
+    provider_org_id: Optional[int] = None
     funder_org_id: Optional[int] = None
     user_org_id: Optional[int] = None
 
@@ -37,3 +39,7 @@ class CaseStudyCreate(BaseModel):
     dataset_language: Optional[str] = None
     additional_document_language: Optional[str] = None
     additional_document_id: Optional[int] = None
+
+class CaseStudyStatusUpdate(BaseModel):
+    status: str
+    rejection_comment: Optional[str] = None
