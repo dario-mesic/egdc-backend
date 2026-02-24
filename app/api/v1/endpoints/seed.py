@@ -148,6 +148,7 @@ async def seed_data(session: AsyncSession = Depends(get_session)):
             methodology_data = case_data.pop("methodology", None)
             logo_data = case_data.pop("logo", None)
             dataset_data = case_data.pop("dataset", None)
+            additional_doc_data = case_data.pop("additional_document", None)
             
             # Convert string date to date object if present
             if case_data.get("created_date"):
@@ -181,6 +182,12 @@ async def seed_data(session: AsyncSession = Depends(get_session)):
                 session.add(dataset)
                 await session.flush()
                 case_study.dataset_id = dataset.id
+            
+            if additional_doc_data:
+                add_doc = Document(**additional_doc_data, language_code="en")
+                session.add(add_doc)
+                await session.flush()
+                case_study.additional_document_id = add_doc.id
             
             session.add(case_study)
             await session.flush()

@@ -169,8 +169,11 @@ async def preview_case_study(
     file_dataset: Optional[UploadFile] = File(None),
     file_logo: Optional[UploadFile] = File(None),
     file_additional_document: Optional[UploadFile] = File(None),
+    methodology_language: Optional[str] = Form(None),
+    dataset_language: Optional[str] = Form(None),
+    additional_document_language: Optional[str] = Form(None),
     session: AsyncSession = Depends(get_session)
-):
+) -> CaseStudyDetailRead:
     # 1. Validation
     case_study_data = validate_case_study_metadata(metadata)
 
@@ -242,15 +245,16 @@ async def preview_case_study(
         }
 
     meth_read = None
-    if file_methodology or case_study_data.methodology_language_code:
-        meth_read = await create_preview_media(file_methodology, case_study_data.methodology_language_code, "methodology")
-        # Ensure it matches Pydantic model structure if returned as dict, or instantiate object
+    meth_lang = methodology_language or case_study_data.methodology_language
+    if file_methodology or meth_lang:
+        meth_read = await create_preview_media(file_methodology, meth_lang, "methodology")
         if meth_read:
             meth_read = MethodologyRead(**meth_read)
 
     data_read = None
-    if file_dataset or case_study_data.dataset_language_code:
-        data_read = await create_preview_media(file_dataset, case_study_data.dataset_language_code, "dataset")
+    data_lang = dataset_language or case_study_data.dataset_language
+    if file_dataset or data_lang:
+        data_read = await create_preview_media(file_dataset, data_lang, "dataset")
         if data_read:
             data_read = DatasetRead(**data_read)
 
@@ -263,12 +267,17 @@ async def preview_case_study(
         )
     
     additional_doc_read = None
-    if file_additional_document or case_study_data.additional_document_id:
+    add_doc_lang = additional_document_language or case_study_data.additional_document_language
+    if file_additional_document or add_doc_lang or case_study_data.additional_document_id:
         if file_additional_document:
+            lang = None
+            if add_doc_lang:
+                lang = await session.get(RefLanguage, add_doc_lang)
             additional_doc_read = DocumentRead(
                 id=0,
                 name=file_additional_document.filename,
-                url=f"/static/uploads/preview_doc_{uuid.uuid4()}"
+                url=f"/static/uploads/preview_doc_{uuid.uuid4()}",
+                language=lang
             )
         elif case_study_data.additional_document_id:
             db_doc = await session.get(Document, case_study_data.additional_document_id)
@@ -276,7 +285,8 @@ async def preview_case_study(
                 additional_doc_read = DocumentRead(
                     id=db_doc.id,
                     name=db_doc.name,
-                    url=db_doc.url
+                    url=db_doc.url,
+                    language=db_doc.language
                 )
 
     # Addresses
@@ -321,9 +331,12 @@ async def create_case_study(
     file_dataset: UploadFile = File(...),
     file_logo: UploadFile = File(...),
     file_additional_document: Optional[UploadFile] = File(None),
+    methodology_language: Optional[str] = Form(None),
+    dataset_language: Optional[str] = Form(None),
+    additional_document_language: Optional[str] = Form(None),
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
-):
+) -> CaseStudyDetailRead:
     # 1. Validation
     case_study_data = validate_case_study_metadata(metadata)
     
@@ -377,20 +390,22 @@ async def create_case_study(
     try:
         # Create Media Objects
         methodology_obj = None
+        meth_lang = methodology_language or case_study_data.methodology_language or "en"
         if media_links.get("methodology"):
             methodology_obj = Methodology(
                 name=file_methodology.filename, 
                 url=media_links["methodology"],
-                language_code=case_study_data.methodology_language_code
+                language_code=meth_lang
             )
             session.add(methodology_obj)
         
         dataset_obj = None
+        data_lang = dataset_language or case_study_data.dataset_language or "en"
         if media_links.get("dataset"):
             dataset_obj = Dataset(
                 name=file_dataset.filename, 
                 url=media_links["dataset"],
-                language_code=case_study_data.dataset_language_code
+                language_code=data_lang
             )
             session.add(dataset_obj)
             
@@ -403,15 +418,20 @@ async def create_case_study(
             session.add(logo_obj)
             
         additional_document_obj = None
+        add_doc_lang = additional_document_language or case_study_data.additional_document_language or "en"
         if media_links.get("additional_document"):
             additional_document_obj = Document(
                 name=file_additional_document.filename,
-                url=media_links["additional_document"]
+                url=media_links["additional_document"],
+                language_code=add_doc_lang
             )
             session.add(additional_document_obj)
         elif case_study_data.additional_document_id:
             # If a separate document ID was sent instead of a file
             additional_document_obj = await session.get(Document, case_study_data.additional_document_id)
+            if additional_document_obj and add_doc_lang:
+                additional_document_obj.language_code = add_doc_lang
+                session.add(additional_document_obj)
             
         await session.flush()
 

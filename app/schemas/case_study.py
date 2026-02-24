@@ -33,6 +33,7 @@ class CaseStudyCreate(BaseModel):
     funder_org_id: Optional[int] = None
     user_org_id: Optional[int] = None
 
-    methodology_language_code: Optional[str] = None
-    dataset_language_code: Optional[str] = None
+    methodology_language: Optional[str] = None
+    dataset_language: Optional[str] = None
+    additional_document_language: Optional[str] = None
     additional_document_id: Optional[int] = None

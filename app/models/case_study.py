@@ -22,11 +22,14 @@ class Document(SQLModel, table=True):
     name: str
     url: str
     description: Optional[str] = None
+    language_code: Optional[str] = Field(default=None, foreign_key="ref_language.code")
+    language: Optional[RefLanguage] = Relationship()
 
 class DocumentRead(SQLModel):
     id: int
     name: str
     url: str
+    language: Optional[RefLanguage] = None
 
 class Methodology(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

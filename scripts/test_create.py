@@ -74,8 +74,9 @@ def test_create_case_study():
         ],
         "provider_org_id": 9,
         "funder_org_id": 1,
-        "methodology_language_code": "en",
-        "dataset_language_code": "en"
+        "methodology_language": "en",
+        "dataset_language": "en",
+        "additional_document_language": "en"
     }
 
     print("Preparing files...")
