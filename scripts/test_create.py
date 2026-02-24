@@ -37,6 +37,7 @@ def test_create_case_study():
     # 2. Prepare metadata with ALL the new parameters
     metadata = {
         "title": "Company Case Study",
+        "status": "pending_approval",
         "short_description": "Short description for Company company case study",
         "long_description": "A long description for Company company case study",
         "problem_solved": "Solved the problem by using Company in changing the environment",
@@ -120,5 +121,36 @@ def test_create_case_study():
         for f in files.values():
             f[1].close()
 
+def test_create_draft():
+    print("\n--- Testing Draft Submission ---")
+    token = get_auth_token()
+    if not token: return
+
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Deliberately incomplete metadata to prove drafts bypass strict validation
+    metadata = {
+        "title": "My Incomplete Draft",
+        "status": "draft", # <--- NEW: Tells the backend to bypass strict validation
+        "tech_code": "ai",
+        "addresses": [],   # Empty addresses allowed for drafts
+        "benefits": []     # Missing Net Carbon Impact allowed for drafts
+    }
+
+    data = {"metadata": json.dumps(metadata)}
+    files = {} # Force multipart/form-data even without files
+
+    try:
+        response = requests.post(BASE_URL, headers=headers, data=data, files=files) # Properly formatted multipart request
+        if response.status_code in [200, 201]:
+            print("Success! Draft saved despite missing mandatory fields.")
+            print(json.dumps(response.json(), indent=2))
+        else:
+            print("Error: Draft was rejected!")
+            print(response.text)
+    except Exception as e:
+        print("Request failed:", e)
+
 if __name__ == "__main__":
     test_create_case_study()
+    test_create_draft()

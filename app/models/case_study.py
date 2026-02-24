@@ -1,6 +1,6 @@
 from typing import List, Optional
-from datetime import date
-from sqlmodel import SQLModel, Field, Relationship
+from datetime import date, datetime
+from sqlmodel import SQLModel, Field, Relationship, text
 from .references import RefBenefitUnit, RefBenefitType, RefSector, RefTechnology, RefCalculationType, RefFundingType, RefLanguage
 from .organization import Organization, OrganizationSummaryRead, OrganizationDetailRead
 from enum import Enum
@@ -99,9 +99,9 @@ class CaseStudyBase(SQLModel):
 class CaseStudy(CaseStudyBase, table=True):
     __tablename__ = "case_study"
     id: Optional[int] = Field(default=None, primary_key=True)
-    system_created_at: Optional[str] = Field(
-        default=None, 
-        sa_column_kwargs={"server_default": "now()"}
+    system_created_at: datetime = Field(
+        default_factory=datetime.now,
+        sa_column_kwargs={"server_default": text("now()")}
     )
 
     # Key differences: Relationships are defined here for SQLAlchemy
@@ -129,6 +129,11 @@ class Address(SQLModel, table=True):
     post_name: Optional[str] = None
     case_study_id: Optional[int] = Field(default=None, foreign_key="case_study.id")
     case_study: Optional[CaseStudy] = Relationship(back_populates="addresses")
+
+class AddressRead(SQLModel):
+    id: int
+    admin_unit_l1: str
+    post_name: Optional[str] = None
 
 class Benefit(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -171,9 +176,9 @@ class CaseStudySummaryRead(SQLModel):
     logo: Optional[ImageObject] = None
     
     # Addresses (Country, Post Name)
-    addresses: List[Address] = []
+    addresses: List[AddressRead] = []
     
-    system_created_at: Optional[str] = None
+    system_created_at: Optional[datetime] = None
     rejection_comment: Optional[str] = None
     status: CaseStudyStatus
 
@@ -192,7 +197,7 @@ class CaseStudyDetailRead(CaseStudyBase):
     dataset: Optional[DatasetRead] = None
     additional_document: Optional[DocumentRead] = None
     
-    addresses: List[Address] = []
+    addresses: List[AddressRead] = []
     benefits: List[BenefitRead] = [] 
     
     # Full Organization Info including Sub-sectors and Contacts
@@ -200,4 +205,4 @@ class CaseStudyDetailRead(CaseStudyBase):
     is_funded_by: List[OrganizationDetailRead] = []
     is_used_by: List[OrganizationDetailRead] = []
 
-    system_created_at: Optional[str] = None
+    system_created_at: Optional[datetime] = None

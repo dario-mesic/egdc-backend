@@ -328,9 +328,9 @@ async def preview_case_study(
 @router.post("/", response_model=CaseStudyDetailRead)
 async def create_case_study(
     metadata: str = Form(...), 
-    file_methodology: UploadFile = File(...),
-    file_dataset: UploadFile = File(...),
-    file_logo: UploadFile = File(...),
+    file_methodology: Optional[UploadFile] = File(None),
+    file_dataset: Optional[UploadFile] = File(None),
+    file_logo: Optional[UploadFile] = File(None),
     file_additional_document: Optional[UploadFile] = File(None),
     methodology_language: Optional[str] = Form(None),
     dataset_language: Optional[str] = Form(None),
@@ -363,6 +363,12 @@ async def create_case_study(
             raise HTTPException(
                 status_code=422,
                 detail="At least one address is required for pending approval status."
+            )
+
+        if not file_methodology or not file_dataset or not file_logo:
+             raise HTTPException(
+                status_code=422,
+                detail="Methodology, Dataset, and Logo files are required for pending approval status."
             )
 
         # Rule 1: Mandatory Net Carbon Impact (Exactly ONE, and type must be environmental)
@@ -567,6 +573,17 @@ async def update_case_study(
             raise HTTPException(status_code=422, detail="The 'Net Carbon Impact' benefit must have type_code='environmental'.")
         if case_study_data.funding_type_code == 'public' and not case_study_data.funding_programme_url:
             raise HTTPException(status_code=422, detail="Funding Programme URL is required when Funding Type is 'public'.")
+            
+        # Ensure files exist (either in this request or already in DB)
+        has_meth = media_links.get("methodology") or db_case_study.methodology_id
+        has_data = media_links.get("dataset") or db_case_study.dataset_id
+        has_logo = media_links.get("logo") or db_case_study.logo_id
+        
+        if not has_meth or not has_data or not has_logo:
+            raise HTTPException(
+                status_code=422,
+                detail="Methodology, Dataset, and Logo are required to submit for approval."
+            )
 
     # File logic
     media_links = {}
