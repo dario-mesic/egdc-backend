@@ -552,6 +552,14 @@ async def update_case_study(
         else:
             new_status = CaseStudyStatus.PENDING_APPROVAL
             
+    # File logic — must happen BEFORE validation so media_links is available for approval checks
+    media_links = {}
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    media_links["methodology"] = await save_file_async(file_methodology, UPLOAD_DIR)
+    media_links["dataset"] = await save_file_async(file_dataset, UPLOAD_DIR)
+    media_links["logo"] = await save_file_async(file_logo, UPLOAD_DIR)
+    media_links["additional_document"] = await save_file_async(file_additional_document, UPLOAD_DIR)
+
     # Strict validation if submitting for approval
     if new_status in [CaseStudyStatus.PENDING_APPROVAL, CaseStudyStatus.PUBLISHED]:
         if not case_study_data.title or not case_study_data.short_description or not case_study_data.provider_org_id:
@@ -587,14 +595,6 @@ async def update_case_study(
                 status_code=422,
                 detail="Methodology, Dataset, and Logo are required to submit for approval."
             )
-
-    # File logic
-    media_links = {}
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    media_links["methodology"] = await save_file_async(file_methodology, UPLOAD_DIR)
-    media_links["dataset"] = await save_file_async(file_dataset, UPLOAD_DIR)
-    media_links["logo"] = await save_file_async(file_logo, UPLOAD_DIR)
-    media_links["additional_document"] = await save_file_async(file_additional_document, UPLOAD_DIR)
 
     try:
         if media_links.get("methodology"):
