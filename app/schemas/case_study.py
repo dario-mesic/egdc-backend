@@ -1,6 +1,14 @@
 from typing import List, Optional
 from datetime import date
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+
+def _empty_str_to_none(v: Optional[str]) -> Optional[str]:
+    """Coerce empty strings to None so FK-backed code fields store NULL, not ''."""
+    if isinstance(v, str) and v.strip() == "":
+        return None
+    return v
+
 
 class BenefitCreate(BaseModel):
     name: str
@@ -10,9 +18,21 @@ class BenefitCreate(BaseModel):
     functional_unit: Optional[str] = None
     is_net_carbon_impact: bool = False
 
+    @field_validator("functional_unit", mode="before")
+    @classmethod
+    def coerce_empty_str(cls, v):
+        return _empty_str_to_none(v)
+
+
 class AddressCreate(BaseModel):
     admin_unit_l1: str
     post_name: Optional[str] = None
+
+    @field_validator("post_name", mode="before")
+    @classmethod
+    def coerce_empty_str(cls, v):
+        return _empty_str_to_none(v)
+
 
 class CaseStudyCreate(BaseModel):
     title: Optional[str] = None
@@ -20,17 +40,17 @@ class CaseStudyCreate(BaseModel):
     long_description: Optional[str] = None
     problem_solved: Optional[str] = None
     created_date: Optional[date] = None
-    
+
     status: Optional[str] = "draft"
-    
+
     tech_code: Optional[str] = None
     calc_type_code: Optional[str] = None
     funding_type_code: Optional[str] = None
     funding_programme_url: Optional[str] = None
-    
+
     benefits: List[BenefitCreate] = []
     addresses: List[AddressCreate] = []
-    
+
     provider_org_id: Optional[int] = None
     funder_org_id: Optional[int] = None
     user_org_id: Optional[int] = None
@@ -40,6 +60,21 @@ class CaseStudyCreate(BaseModel):
     additional_document_language: Optional[str] = None
     additional_document_id: Optional[int] = None
 
+    # Coerce "" → None for every Optional[str] field so the DB receives NULL
+    # instead of an empty string that would violate FK constraints on code columns.
+    @field_validator(
+        "title", "short_description", "long_description", "problem_solved",
+        "status", "tech_code", "calc_type_code", "funding_type_code",
+        "funding_programme_url", "methodology_language", "dataset_language",
+        "additional_document_language",
+        mode="before",
+    )
+    @classmethod
+    def coerce_empty_str(cls, v):
+        return _empty_str_to_none(v)
+
+
 class CaseStudyStatusUpdate(BaseModel):
     status: str
     rejection_comment: Optional[str] = None
+
