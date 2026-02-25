@@ -221,6 +221,8 @@ async def preview_case_study(
                 id=i,  # Dummy ID
                 name=b.name,
                 value=b.value,
+                functional_unit=b.functional_unit,
+                is_net_carbon_impact=b.is_net_carbon_impact,
                 unit=units_map.get(b.unit_code),
                 type=types_map.get(b.type_code)
             )
@@ -307,6 +309,7 @@ async def preview_case_study(
         tech_code=case_study_data.tech_code,
         calc_type_code=case_study_data.calc_type_code,
         funding_type_code=case_study_data.funding_type_code,
+        funding_programme_url=case_study_data.funding_programme_url,
         
         tech=tech,
         calc_type=calc_type,
@@ -707,3 +710,43 @@ async def review_case_study(
     query = select(CaseStudy).where(CaseStudy.id == id).options(*get_case_study_loader_options(detailed=True))
     result = await session.execute(query)
     return result.scalars().first()
+
+
+@router.delete("/{id}", status_code=204)
+async def delete_case_study(
+    id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete a case study by ID.
+    Only ADMIN or CUSTODIAN roles are permitted.
+    """
+    # 1. RBAC check
+    if current_user.role not in [UserRole.ADMIN, UserRole.CUSTODIAN]:
+        raise HTTPException(
+            status_code=403,
+            detail="Not enough permissions"
+        )
+
+    # 2. Fetch the case study
+    query = select(CaseStudy).where(CaseStudy.id == id)
+    result = await session.execute(query)
+    case_study = result.scalars().first()
+
+    if not case_study:
+        raise HTTPException(status_code=404, detail="Case study not found")
+
+    # 3. Cascade-delete children and link rows, then the case study itself
+    try:
+        await session.execute(delete(Benefit).where(Benefit.case_study_id == id))
+        await session.execute(delete(Address).where(Address.case_study_id == id))
+        await session.execute(delete(CaseStudyProviderLink).where(CaseStudyProviderLink.case_study_id == id))
+        await session.execute(delete(CaseStudyFunderLink).where(CaseStudyFunderLink.case_study_id == id))
+        await session.flush()
+
+        await session.delete(case_study)
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        raise e
