@@ -129,18 +129,62 @@ async def read_case_studies(
     limit: int = Query(10, ge=1, le=100),
     session: AsyncSession = Depends(get_session)
 ):
+    """Public endpoint — only returns PUBLISHED case studies."""
     offset = (page - 1) * limit
 
-    # Get total count
-    count_query = select(func.count()).select_from(CaseStudy)
+    # Get total count (published only)
+    count_query = select(func.count()).select_from(CaseStudy).where(
+        CaseStudy.status == CaseStudyStatus.PUBLISHED
+    )
     total_result = await session.execute(count_query)
     total = total_result.scalar() or 0
 
-    # Optimized query using helper
-    query = select(CaseStudy).options(
+    # Fetch published case studies only
+    query = select(CaseStudy).where(
+        CaseStudy.status == CaseStudyStatus.PUBLISHED
+    ).options(
         *get_case_study_loader_options(detailed=False)
     ).offset(offset).limit(limit)
-    
+
+    result = await session.execute(query)
+    items = result.scalars().all()
+
+    return PaginatedResponse(
+        total=total,
+        page=page,
+        limit=limit,
+        items=items
+    )
+
+
+@router.get("/pending", response_model=PaginatedResponse[CaseStudySummaryRead])
+async def read_pending_case_studies(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """Custodian dashboard — returns all PENDING_APPROVAL case studies."""
+    if current_user.role not in [UserRole.ADMIN, UserRole.CUSTODIAN]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only Custodians and Admins can access the pending review queue."
+        )
+
+    offset = (page - 1) * limit
+
+    count_query = select(func.count()).select_from(CaseStudy).where(
+        CaseStudy.status == CaseStudyStatus.PENDING_APPROVAL
+    )
+    total_result = await session.execute(count_query)
+    total = total_result.scalar() or 0
+
+    query = select(CaseStudy).where(
+        CaseStudy.status == CaseStudyStatus.PENDING_APPROVAL
+    ).options(
+        *get_case_study_loader_options(detailed=False)
+    ).offset(offset).limit(limit)
+
     result = await session.execute(query)
     items = result.scalars().all()
 
@@ -720,22 +764,38 @@ async def delete_case_study(
 ):
     """
     Delete a case study by ID.
-    Only ADMIN or CUSTODIAN roles are permitted.
-    """
-    # 1. RBAC check
-    if current_user.role not in [UserRole.ADMIN, UserRole.CUSTODIAN]:
-        raise HTTPException(
-            status_code=403,
-            detail="Not enough permissions"
-        )
 
-    # 2. Fetch the case study
+    - Admin / Custodian: can delete ANY case study.
+    - Data Owner: can ONLY delete their OWN case study when it is in 'draft' status.
+      Attempting to delete someone else's study, or one in 'pending_approval' /
+      'published' status, raises 403.
+    """
+    # 1. Fetch the case study first so we can enforce ownership rules
     query = select(CaseStudy).where(CaseStudy.id == id)
     result = await session.execute(query)
     case_study = result.scalars().first()
 
     if not case_study:
         raise HTTPException(status_code=404, detail="Case study not found")
+
+    # 2. RBAC check
+    if current_user.role in [UserRole.ADMIN, UserRole.CUSTODIAN]:
+        # Privileged roles: no further restrictions
+        pass
+    elif current_user.role == UserRole.DATA_OWNER:
+        # Data Owner: must own the study AND it must still be a draft
+        if case_study.created_by != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="You do not have permission to delete another user's case study."
+            )
+        if case_study.status != CaseStudyStatus.DRAFT:
+            raise HTTPException(
+                status_code=403,
+                detail="You can only delete your own case studies while they are in 'draft' status."
+            )
+    else:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     # 3. Cascade-delete children and link rows, then the case study itself
     try:

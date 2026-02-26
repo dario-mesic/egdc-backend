@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_, cast, String, func, text
 from sqlalchemy.orm import selectinload
 from app.db.session import get_session
-from app.models.case_study import CaseStudy, Address, Benefit, CaseStudySummaryRead, CaseStudyProviderLink
+from app.models.case_study import CaseStudy, Address, Benefit, CaseStudySummaryRead, CaseStudyProviderLink, CaseStudyStatus
 from app.models.references import (
     RefSector, RefFundingType, RefTechnology, RefCalculationType,
     RefBenefitType, RefBenefitUnit, RefOrganizationType, RefCountry
@@ -46,7 +46,8 @@ async def search_case_studies(
     session: AsyncSession = Depends(get_session)
 ):
     # Base query for data
-    data_query = select(CaseStudy)
+    # PUBLIC ENDPOINT RULE: Search only returns PUBLISHED case studies
+    data_query = select(CaseStudy).where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
     
     # --- Exact Filters (Now Multi-select) ---
     
@@ -101,27 +102,63 @@ async def search_case_studies(
                                .outerjoin(RefCountry, Address.admin_unit_l1 == RefCountry.code, full=False)
         
         if match_type == 'exact':
-            # Exact Match: Strict equality for Title, Regex Word Boundary for others
-            # Postgres regex word boundary is \y
-            # We use distinct regex logic for description fields vs equality for names
-            
-            # Escaping q for regex to avoid syntax errors if q contains special chars
+            # Exact Match: Strict equality for Title, Regex Word Boundary for others.
+            # IMPORTANT: Use func.trim() universally to guard against trailing whitespace
+            # stored in or sent from the DB / client.
+            #
+            # Root cause of the "Economic" bug: the outerjoin'd reference tables
+            # (RefBenefitType, RefTechnology, etc.) were never included in this OR clause,
+            # so searching a *label* like "Economic" never matched the stored *code* "economic".
+            # Fix: add .label comparisons for every reference table that is already joined.
+
             import re
             q_safe = re.escape(q)
             search_regex = f"\\y{q_safe}\\y"
-            
+
+            # Universal Case-Insensitive exact check for labels/names
+            q_lower = q.lower()
+
             data_query = data_query.where(
                 or_(
-                    CaseStudy.title == q,
+                    # --- Free-text fields (word-boundary regex, case-insensitive) ---
+                    CaseStudy.title.op("~*")(search_regex),
                     CaseStudy.short_description.op("~*")(search_regex),
                     CaseStudy.long_description.op("~*")(search_regex),
                     CaseStudy.problem_solved.op("~*")(search_regex),
-                    Organization.name == q,
-                    ContactPoint.has_email == q,
-                    RefSector.label == q,
-                    Address.admin_unit_l1 == q,
-                    RefCountry.label == q, # Match full country name
-                    Address.post_name == q
+
+                    # --- Exact label / name / code matches (trimmed and case-insensitive for labels) ---
+                    func.lower(func.trim(Organization.name)) == q_lower,
+                    func.lower(func.trim(ContactPoint.has_email)) == q_lower,
+
+                    # Sector label & code
+                    func.lower(func.trim(RefSector.label)) == q_lower,
+                    RefSector.code == q,
+
+                    # Benefit type & unit labels & codes
+                    # This fixes the "social" issue if searching for the code or lowercase label
+                    func.lower(func.trim(RefBenefitType.label)) == q_lower,
+                    RefBenefitType.code == q,
+                    func.lower(func.trim(RefBenefitUnit.label)) == q_lower,
+                    RefBenefitUnit.code == q,
+
+                    # Technology label & code
+                    func.lower(func.trim(RefTechnology.label)) == q_lower,
+                    RefTechnology.code == q,
+
+                    # Calculation & Funding type labels & codes
+                    func.lower(func.trim(RefCalculationType.label)) == q_lower,
+                    RefCalculationType.code == q,
+                    func.lower(func.trim(RefFundingType.label)) == q_lower,
+                    RefFundingType.code == q,
+
+                    # Organisation type label & code
+                    func.lower(func.trim(RefOrganizationType.label)) == q_lower,
+                    RefOrganizationType.code == q,
+
+                    # Address / country
+                    func.trim(Address.admin_unit_l1) == q,
+                    func.lower(func.trim(RefCountry.label)) == q_lower,
+                    func.lower(func.trim(Address.post_name)) == q_lower,
                 )
             )
         else:
@@ -144,9 +181,12 @@ async def search_case_studies(
                     CaseStudy.problem_solved.ilike(search_term),
                     cast(CaseStudy.created_date, String).ilike(search_term),
                     Benefit.name.ilike(search_term),
+                    Benefit.type_code.ilike(search_term), # Also match partial codes
                     RefBenefitType.label.ilike(search_term),
+                    Benefit.unit_code.ilike(search_term), # Also match partial codes
                     RefBenefitUnit.label.ilike(search_term),
                     Organization.name.ilike(search_term),
+                    Organization.sector_code.ilike(search_term),
                     ContactPoint.has_email.ilike(search_term),
                     RefSector.label.ilike(search_term),
                     RefOrganizationType.label.ilike(search_term),
@@ -256,6 +296,7 @@ async def get_search_facets(session: AsyncSession = Depends(get_session)):
         select(Organization.sector_code, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudyProviderLink, CaseStudyProviderLink.organization_id == Organization.id)
         .join(CaseStudy, CaseStudy.id == CaseStudyProviderLink.case_study_id)
+        .where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
         .group_by(Organization.sector_code)
     )
     sector_facets = await get_counts(sector_query)
@@ -263,6 +304,7 @@ async def get_search_facets(session: AsyncSession = Depends(get_session)):
     # 2. Tech facets (Usually 1:1, but distinct is safer)
     tech_query = (
         select(CaseStudy.tech_code, func.count(func.distinct(CaseStudy.id)))
+        .where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
         .group_by(CaseStudy.tech_code)
     )
     tech_facets = await get_counts(tech_query)
@@ -270,6 +312,7 @@ async def get_search_facets(session: AsyncSession = Depends(get_session)):
     # 3. Funding Type facets
     funding_query = (
         select(CaseStudy.funding_type_code, func.count(func.distinct(CaseStudy.id)))
+        .where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
         .group_by(CaseStudy.funding_type_code)
     )
     funding_facets = await get_counts(funding_query)
@@ -277,6 +320,7 @@ async def get_search_facets(session: AsyncSession = Depends(get_session)):
     # 4. Calculation Type facets
     calc_query = (
         select(CaseStudy.calc_type_code, func.count(func.distinct(CaseStudy.id)))
+        .where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
         .group_by(CaseStudy.calc_type_code)
     )
     calc_facets = await get_counts(calc_query)
@@ -286,6 +330,7 @@ async def get_search_facets(session: AsyncSession = Depends(get_session)):
     country_query = (
         select(Address.admin_unit_l1, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudy, CaseStudy.id == Address.case_study_id)
+        .where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
         .group_by(Address.admin_unit_l1)
     )
     country_facets = await get_counts(country_query)
@@ -295,6 +340,7 @@ async def get_search_facets(session: AsyncSession = Depends(get_session)):
         select(Organization.org_type_code, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudyProviderLink, CaseStudyProviderLink.organization_id == Organization.id)
         .join(CaseStudy, CaseStudy.id == CaseStudyProviderLink.case_study_id)
+        .where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
         .group_by(Organization.org_type_code)
     )
     org_type_facets = await get_counts(org_type_query)
@@ -305,6 +351,7 @@ async def get_search_facets(session: AsyncSession = Depends(get_session)):
     unit_query = (
         select(Benefit.unit_code, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudy, CaseStudy.id == Benefit.case_study_id)
+        .where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
         .group_by(Benefit.unit_code)
     )
     unit_facets = await get_counts(unit_query)
@@ -313,6 +360,7 @@ async def get_search_facets(session: AsyncSession = Depends(get_session)):
     type_query = (
         select(Benefit.type_code, func.count(func.distinct(CaseStudy.id)))
         .join(CaseStudy, CaseStudy.id == Benefit.case_study_id)
+        .where(CaseStudy.status == CaseStudyStatus.PUBLISHED)
         .group_by(Benefit.type_code)
     )
     type_facets = await get_counts(type_query)
