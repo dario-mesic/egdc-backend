@@ -12,26 +12,30 @@ def _empty_str_to_none(v: Optional[str]) -> Optional[str]:
 
 class BenefitCreate(BaseModel):
     name: str
-    value: int
+    value: Optional[int] = None
     unit_code: str
     type_code: str
     functional_unit: Optional[str] = None
     is_net_carbon_impact: bool = False
 
-    @field_validator("functional_unit", mode="before")
+    @field_validator("functional_unit", "value", "unit_code", "type_code", "name", mode="before")
     @classmethod
     def coerce_empty_str(cls, v):
-        return _empty_str_to_none(v)
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
 
 class AddressCreate(BaseModel):
     admin_unit_l1: str
     post_name: Optional[str] = None
 
-    @field_validator("post_name", mode="before")
+    @field_validator("post_name", "admin_unit_l1", mode="before")
     @classmethod
     def coerce_empty_str(cls, v):
-        return _empty_str_to_none(v)
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
 
 class CaseStudyCreate(BaseModel):
@@ -60,18 +64,21 @@ class CaseStudyCreate(BaseModel):
     additional_document_language: Optional[str] = None
     additional_document_id: Optional[int] = None
 
-    # Coerce "" → None for every Optional[str] field so the DB receives NULL
-    # instead of an empty string that would violate FK constraints on code columns.
+    # Coerce "" → None for every Optional field so the DB receives NULL
+    # instead of an empty string that would violate FK constraints or cause type errors.
     @field_validator(
         "title", "short_description", "long_description", "problem_solved",
         "status", "tech_code", "calc_type_code", "funding_type_code",
         "funding_programme_url", "methodology_language", "dataset_language",
-        "additional_document_language",
+        "additional_document_language", "provider_org_id", "funder_org_id",
+        "user_org_id", "additional_document_id", "created_date",
         mode="before",
     )
     @classmethod
     def coerce_empty_str(cls, v):
-        return _empty_str_to_none(v)
+        if isinstance(v, str) and v.strip() == "":
+            return None
+        return v
 
 
 class CaseStudyStatusUpdate(BaseModel):

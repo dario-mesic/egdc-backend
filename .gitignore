@@ -119,5 +119,3 @@ dmypy.json
 .pyre/
 .env.dev
 .env.prod
-docker-compose.yml
-docker-compose.yml

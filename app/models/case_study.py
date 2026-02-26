@@ -138,7 +138,7 @@ class AddressRead(SQLModel):
 class Benefit(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
-    value: int
+    value: Optional[int] = Field(default=None, nullable=True)
     functional_unit: Optional[str] = None
     is_net_carbon_impact: bool = Field(default=False)
     unit_code: str = Field(foreign_key="ref_benefit_unit.code")
@@ -152,7 +152,7 @@ class Benefit(SQLModel, table=True):
 class BenefitRead(SQLModel):
     id: int
     name: str
-    value: int
+    value: Optional[int] = None
     functional_unit: Optional[str] = None
     is_net_carbon_impact: bool = False
     unit: Optional[RefBenefitUnit]
