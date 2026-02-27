@@ -259,7 +259,8 @@ async def preview_case_study(
         res = await session.execute(select(RefBenefitType).where(RefBenefitType.code.in_(type_codes)))
         types_map = {t.code: t for t in res.scalars().all()}
 
-    for i, b in enumerate(case_study_data.benefits):
+    # Filter incomplete benefits for preview (BenefitRead requires name)
+    for i, b in enumerate(b for b in case_study_data.benefits if b.name and b.unit_code and b.type_code):
         benefit_reads.append(
             BenefitRead(
                 id=i,  # Dummy ID
@@ -336,10 +337,10 @@ async def preview_case_study(
                     language=db_doc.language
                 )
 
-    # Addresses
+    # Addresses (filter incomplete for preview - Address model requires admin_unit_l1)
     address_objs = [
         Address(id=i, admin_unit_l1=a.admin_unit_l1, post_name=a.post_name, case_study_id=0)
-        for i, a in enumerate(case_study_data.addresses)
+        for i, a in enumerate(a for a in case_study_data.addresses if a.admin_unit_l1)
     ]
 
     # Construct Response
@@ -412,6 +413,14 @@ async def create_case_study(
                 detail="At least one address is required for pending approval status."
             )
 
+        # Each address must have country (admin_unit_l1) when submitting for approval
+        for i, a in enumerate(case_study_data.addresses):
+            if not a.admin_unit_l1 or (isinstance(a.admin_unit_l1, str) and not a.admin_unit_l1.strip()):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Address at index {i} must have a country (admin_unit_l1) when submitting for approval."
+                )
+
         if not file_methodology or not file_dataset or not file_logo:
              raise HTTPException(
                 status_code=422,
@@ -429,6 +438,14 @@ async def create_case_study(
                 status_code=422,
                 detail="Exactly one benefit must be marked as 'Net Carbon Impact' (is_net_carbon_impact=True)."
             )
+
+        # All benefits must have required fields when submitting for approval
+        for i, b in enumerate(case_study_data.benefits):
+            if not b.name or not b.unit_code or not b.type_code:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Benefit at index {i} must have name, unit_code, and type_code when submitting for approval."
+                )
             
         if net_impact_benefits[0].type_code != 'environmental':
             raise HTTPException(
@@ -526,11 +543,15 @@ async def create_case_study(
         await session.flush()
 
         # Create Children
+        # Only persist benefits with required fields (draft can have incomplete benefits)
         for b in case_study_data.benefits:
-            session.add(Benefit(**b.model_dump(), case_study_id=db_case_study.id))
+            if b.name and b.unit_code and b.type_code:
+                session.add(Benefit(**b.model_dump(), case_study_id=db_case_study.id))
             
+        # Only persist addresses with admin_unit_l1 (draft can have incomplete addresses)
         for a in case_study_data.addresses:
-            session.add(Address(**a.model_dump(), case_study_id=db_case_study.id))
+            if a.admin_unit_l1:
+                session.add(Address(**a.model_dump(), case_study_id=db_case_study.id))
             
         # Links
         if case_study_data.provider_org_id:
@@ -618,12 +639,29 @@ async def update_case_study(
                 detail="At least one address is required for pending approval status."
             )
 
+        # Each address must have country (admin_unit_l1) when submitting for approval
+        for i, a in enumerate(case_study_data.addresses):
+            if not a.admin_unit_l1 or (isinstance(a.admin_unit_l1, str) and not a.admin_unit_l1.strip()):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Address at index {i} must have a country (admin_unit_l1) when submitting for approval."
+                )
+
         net_impact_benefits = [
             b for b in case_study_data.benefits 
             if b.is_net_carbon_impact
         ]
         if len(net_impact_benefits) != 1:
             raise HTTPException(status_code=422, detail="Exactly one benefit must be marked as 'Net Carbon Impact'.")
+
+        # All benefits must have required fields when submitting for approval
+        for i, b in enumerate(case_study_data.benefits):
+            if not b.name or not b.unit_code or not b.type_code:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Benefit at index {i} must have name, unit_code, and type_code when submitting for approval."
+                )
+
         if net_impact_benefits[0].type_code != 'environmental':
             raise HTTPException(status_code=422, detail="The 'Net Carbon Impact' benefit must have type_code='environmental'.")
         if case_study_data.funding_type_code == 'public' and not case_study_data.funding_programme_url:
@@ -699,11 +737,15 @@ async def update_case_study(
         await session.execute(delete(CaseStudyFunderLink).where(CaseStudyFunderLink.case_study_id == id))
         await session.flush()
 
+        # Only persist benefits with required fields (draft can have incomplete benefits)
         for b in case_study_data.benefits:
-            session.add(Benefit(**b.model_dump(), case_study_id=id))
+            if b.name and b.unit_code and b.type_code:
+                session.add(Benefit(**b.model_dump(), case_study_id=id))
             
+        # Only persist addresses with admin_unit_l1 (draft can have incomplete addresses)
         for a in case_study_data.addresses:
-            session.add(Address(**a.model_dump(), case_study_id=id))
+            if a.admin_unit_l1:
+                session.add(Address(**a.model_dump(), case_study_id=id))
             
         if case_study_data.provider_org_id:
             session.add(CaseStudyProviderLink(case_study_id=id, organization_id=case_study_data.provider_org_id))

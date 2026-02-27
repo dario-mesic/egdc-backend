@@ -11,10 +11,11 @@ def _empty_str_to_none(v: Optional[str]) -> Optional[str]:
 
 
 class BenefitCreate(BaseModel):
-    name: str
+    """All fields optional for draft; required when status is pending_approval/published."""
+    name: Optional[str] = None
     value: Optional[int] = None
-    unit_code: str
-    type_code: str
+    unit_code: Optional[str] = None
+    type_code: Optional[str] = None
     functional_unit: Optional[str] = None
     is_net_carbon_impact: bool = False
 
@@ -27,7 +28,8 @@ class BenefitCreate(BaseModel):
 
 
 class AddressCreate(BaseModel):
-    admin_unit_l1: str
+    """All fields optional for draft; admin_unit_l1 required when status is pending_approval/published."""
+    admin_unit_l1: Optional[str] = None
     post_name: Optional[str] = None
 
     @field_validator("post_name", "admin_unit_l1", mode="before")
