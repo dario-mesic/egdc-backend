@@ -3,6 +3,7 @@ import uuid
 import aiofiles
 from typing import List, Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select, func, delete
@@ -852,3 +853,5 @@ async def delete_case_study(
     except Exception as e:
         await session.rollback()
         raise e
+
+    return Response(status_code=204)
