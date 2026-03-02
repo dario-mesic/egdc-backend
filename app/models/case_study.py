@@ -1,6 +1,7 @@
 from typing import List, Optional
 from datetime import date, datetime
 from sqlmodel import SQLModel, Field, Relationship, text
+from sqlalchemy import ForeignKey, Column, Integer
 from .references import RefBenefitUnit, RefBenefitType, RefSector, RefTechnology, RefCalculationType, RefFundingType, RefLanguage
 from .organization import Organization, OrganizationSummaryRead, OrganizationDetailRead
 from enum import Enum
@@ -92,7 +93,7 @@ class CaseStudyBase(SQLModel):
     methodology_id: Optional[int] = Field(default=None, foreign_key="methodology.id")
     dataset_id: Optional[int] = Field(default=None, foreign_key="dataset.id")
     additional_document_id: Optional[int] = Field(default=None, foreign_key="document.id")
-    created_by: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_by: Optional[int] = Field(sa_column=Column(Integer, ForeignKey("user.id", ondelete="SET NULL"), nullable=True))
 
 
 # --- Core CaseStudy Model (Table) ---
