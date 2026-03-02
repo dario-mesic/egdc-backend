@@ -10,5 +10,10 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    role: Optional[UserRole] = UserRole.DATA_OWNER
+
 class UserRoleUpdate(BaseModel):
     role: UserRole

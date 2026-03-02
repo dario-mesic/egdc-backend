@@ -8,7 +8,8 @@ from app.models.user import User, UserRole
 from app.models.case_study import CaseStudy, CaseStudySummaryRead, CaseStudyStatus
 from app.api.v1.endpoints.case_studies import get_case_study_loader_options
 from app.schemas.pagination import PaginatedResponse
-from app.schemas.user import UserOut, UserRoleUpdate
+from app.schemas.user import UserOut, UserCreate, UserRoleUpdate
+from app.core.security import get_password_hash
 
 router = APIRouter()
 
@@ -47,6 +48,32 @@ async def read_user_case_studies(
         limit=limit,
         items=items
     )
+
+@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user_in: UserCreate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(deps.get_current_user),
+):
+    """Admin only: Create a new user."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Forbidden: Admin access required")
+
+    # Check if user already exists
+    query = select(User).where(User.email == user_in.email)
+    result = await session.execute(query)
+    if result.scalars().first():
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    new_user = User(
+        email=user_in.email,
+        hashed_password=get_password_hash(user_in.password),
+        role=user_in.role
+    )
+    session.add(new_user)
+    await session.commit()
+    await session.refresh(new_user)
+    return new_user
 
 # --- Admin User Management ---
 

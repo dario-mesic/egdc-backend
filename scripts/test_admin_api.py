@@ -91,11 +91,56 @@ def test_admin_management():
     # response = requests.delete(f"{BASE_URL}/users/{target_user['id']}", headers=headers)
     # print(f"Delete Status: {response.status_code}")
 
+def test_admin_user_creation():
+    print("\n--- Testing Admin User Creation ---")
+    admin_token = login(ADMIN_EMAIL, PASSWORD)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    
+    dummy_email = "dummy@example.com"
+    dummy_password = "dummy_password"
+    
+    # Check if dummy user already exists (cleanup from previous failed tests)
+    response = requests.get(f"{BASE_URL}/users/", headers=headers)
+    users = response.json()["items"]
+    existing_dummy = next((u for u in users if u["email"] == dummy_email), None)
+    if existing_dummy:
+        print(f"Cleanup existing dummy user {dummy_email}...")
+        requests.delete(f"{BASE_URL}/users/{existing_dummy['id']}", headers=headers)
+
+    # 1. Create User
+    print(f"Creating user {dummy_email}...")
+    create_data = {
+        "email": dummy_email,
+        "password": dummy_password,
+        "role": "data_owner"
+    }
+    response = requests.post(f"{BASE_URL}/users/", headers=headers, json=create_data)
+    print(f"Create Status: {response.status_code}")
+    assert response.status_code == 201
+    user = response.json()
+    assert user["email"] == dummy_email
+    assert user["role"] == "data_owner"
+    assert "id" in user
+    print(f"User created with ID: {user['id']}")
+
+    # 2. Duplicate Check
+    print("Testing duplicate creation...")
+    response = requests.post(f"{BASE_URL}/users/", headers=headers, json=create_data)
+    print(f"Duplicate Status: {response.status_code} (Expected: 400)")
+    assert response.status_code == 400
+
+    # 3. Clean up (Delete dummy)
+    print(f"Deleting dummy user {user['id']}...")
+    delete_response = requests.delete(f"{BASE_URL}/users/{user['id']}", headers=headers)
+    print(f"Delete Status: {delete_response.status_code}")
+    assert delete_response.status_code == 204
+
 if __name__ == "__main__":
     try:
         test_pagination()
         test_admin_rbac()
         test_admin_management()
+        test_admin_user_creation()
         print("\nAll tests passed successfully!")
     except Exception as e:
         print(f"\nTest failed: {e}")
