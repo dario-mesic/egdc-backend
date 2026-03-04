@@ -93,7 +93,7 @@ class CaseStudyBase(SQLModel):
     methodology_id: Optional[int] = Field(default=None, foreign_key="methodology.id")
     dataset_id: Optional[int] = Field(default=None, foreign_key="dataset.id")
     additional_document_id: Optional[int] = Field(default=None, foreign_key="document.id")
-    created_by: Optional[int] = Field(sa_column=Column(Integer, ForeignKey("user.id", ondelete="SET NULL"), nullable=True))
+    created_by: Optional[int] = Field(default=None, sa_column=Column(Integer, ForeignKey("user.id", ondelete="SET NULL"), nullable=True))
 
 
 # --- Core CaseStudy Model (Table) ---
@@ -156,8 +156,8 @@ class BenefitRead(SQLModel):
     value: Optional[int] = None
     functional_unit: Optional[str] = None
     is_net_carbon_impact: bool = False
-    unit: Optional[RefBenefitUnit]
-    type: Optional[RefBenefitType]
+    unit: Optional[RefBenefitUnit] = None
+    type: Optional[RefBenefitType] = None
 
 # --- Read Schemas (Pydantic Response) ---
 class CaseStudySummaryRead(SQLModel):
