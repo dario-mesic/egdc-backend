@@ -69,7 +69,7 @@ def test_create_case_study():
         ],
         "addresses": [
             {
-                "admin_unit_l1": "CRO",
+                "admin_unit_l1": "HR",
                 "post_name": "Zagreb"
             }
         ],
@@ -153,4 +153,5 @@ def test_create_draft():
 
 if __name__ == "__main__":
     test_create_case_study()
+
     test_create_draft()
