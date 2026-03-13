@@ -160,7 +160,7 @@
         "label": "Cyprus"
       },
       {
-        "code": "CRO",
+        "code": "HR",
         "label": "Croatia"
       },
       {
@@ -1019,4 +1019,5 @@
       }
     }
   ]
+
 }
