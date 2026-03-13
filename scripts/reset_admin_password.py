@@ -14,7 +14,8 @@ Edit the CONFIG section below before running.
 
 import sys
 import psycopg2
-from passlib.context import CryptContext
+import hashlib
+import bcrypt
 
 # ── CONFIG ─────────────────────────────────────────────────────────────────
 # Update these values before running.
@@ -29,12 +30,18 @@ ADMIN_EMAIL    = "admin@example.com"
 NEW_PASSWORD   = "password123"   # the desired new plain-text password
 # ───────────────────────────────────────────────────────────────────────────
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def _sha256_hexdigest_bytes(password: str) -> bytes:
+    return hashlib.sha256(password.encode('utf-8')).hexdigest().encode('ascii')
 
+def get_password_hash(password: str) -> str:
+    prehashed = _sha256_hexdigest_bytes(password)
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(prehashed, salt)
+    return hashed.decode('ascii')
 
 def main() -> None:
     print(f"Hashing new password for '{ADMIN_EMAIL}' ...")
-    new_hash = pwd_context.hash(NEW_PASSWORD)
+    new_hash = get_password_hash(NEW_PASSWORD) # <-- CHANGED THIS LINE
     print(f"Generated bcrypt hash: {new_hash[:30]}...")
 
     try:
