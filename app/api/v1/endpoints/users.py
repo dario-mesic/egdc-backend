@@ -53,11 +53,10 @@ async def read_user_case_studies(
 async def create_user(
     user_in: UserCreate,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(deps.get_current_user),
 ):
-    """Admin only: Create a new user."""
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Forbidden: Admin access required")
+    """Create a new user (Signup)."""
+    # NOTE: this is logic for now and later will be different with mail system.
+    
 
     # Check if user already exists
     query = select(User).where(User.email == user_in.email)

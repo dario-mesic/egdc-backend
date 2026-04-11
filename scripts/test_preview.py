@@ -28,7 +28,8 @@ def test_preview_api():
                 "unit_code": "tco2",
                 "type_code": "environmental",
                 "is_net_carbon_impact": True,
-                "functional_unit": "per year"
+                "functional_unit": "per year",
+                "functional_value": 1
             },
             {
                 "name": "Secondary Benefit",
@@ -36,7 +37,8 @@ def test_preview_api():
                 "unit_code": "percent",
                 "type_code": "economic",
                 "is_net_carbon_impact": False,
-                "functional_unit": "per site"
+                "functional_unit": "per site",
+                "functional_value": 1
             }
         ],
         "addresses": [

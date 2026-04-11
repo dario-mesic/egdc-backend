@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlmodel import SQLModel
-from app.db.session import get_session, engine
+from app.db.session import get_session, engine, async_session
 from app.db.init_db import init_db
 from app.models.references import RefSector, RefOrganizationType, RefFundingType, RefCalculationType, RefBenefitUnit, RefBenefitType, RefTechnology, RefCountry, RefLanguage
 from app.models.organization import Organization, ContactPoint
@@ -18,14 +18,14 @@ import aiofiles
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-@router.post("/seed")
-async def seed_data(session: AsyncSession = Depends(get_session)):
+async def run_seed(session: AsyncSession) -> dict:
+    """Core seeding logic. Call from POST /seed or from CLI (python -m app.api.v1.endpoints.seed)."""
     logger.info("Seed started: dropping all tables.")
     # 0. Reset DB (Drop All Tables to ensure schema updates)
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
 
-    # 1. Initialize DB (Create Tables)
+    # 1. Initialize DB (Create Tables + pg_trgm extension)
     await init_db()
     logger.info("Tables recreated successfully.")
 
@@ -198,6 +198,8 @@ async def seed_data(session: AsyncSession = Depends(get_session)):
 
             if case_data.get("created_date"):
                 case_data["created_date"] = date.fromisoformat(case_data["created_date"])
+            
+            case_data.setdefault("language_code", "en")
 
             case_study = CaseStudy(**case_data)
             case_study.created_by = data_owner_id
@@ -267,3 +269,23 @@ async def seed_data(session: AsyncSession = Depends(get_session)):
 
     logger.info("Seeding complete. %d case studies inserted.", seeded_count)
     return {"message": f"Database seeded successfully. {seeded_count} case studies inserted."}
+
+
+@router.post("/seed")
+async def seed_data(session: AsyncSession = Depends(get_session)):
+    return await run_seed(session)
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    async def main() -> None:
+        async with async_session() as session:
+            try:
+                result = await run_seed(session)
+                print(result.get("message", result))
+            except Exception as e:
+                logger.exception("Seed failed: %s", e)
+                raise SystemExit(1) from e
+
+    asyncio.run(main())

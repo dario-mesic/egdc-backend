@@ -88,6 +88,7 @@ class CaseStudyBase(SQLModel):
     tech_code: Optional[str] = Field(default=None, foreign_key="ref_technology.code")
     calc_type_code: Optional[str] = Field(default=None, foreign_key="ref_calculation_type.code")
     funding_type_code: Optional[str] = Field(default=None, foreign_key="ref_funding_type.code")
+    language_code: Optional[str] = Field(default="en", foreign_key="ref_language.code")
 
     logo_id: Optional[int] = Field(default=None, foreign_key="image_object.id")
     methodology_id: Optional[int] = Field(default=None, foreign_key="methodology.id")
@@ -109,6 +110,7 @@ class CaseStudy(CaseStudyBase, table=True):
     tech: Optional[RefTechnology] = Relationship()
     calc_type: Optional[RefCalculationType] = Relationship()
     funding_type: Optional[RefFundingType] = Relationship()
+    language: Optional[RefLanguage] = Relationship()
 
     logo: Optional[ImageObject] = Relationship()
     methodology: Optional[Methodology] = Relationship()
@@ -141,6 +143,7 @@ class Benefit(SQLModel, table=True):
     name: str
     value: Optional[int] = Field(default=None, nullable=True)
     functional_unit: Optional[str] = None
+    functional_value: Optional[int] = Field(default=None, nullable=True)
     is_net_carbon_impact: bool = Field(default=False)
     unit_code: str = Field(foreign_key="ref_benefit_unit.code")
     type_code: str = Field(foreign_key="ref_benefit_type.code")
@@ -155,6 +158,7 @@ class BenefitRead(SQLModel):
     name: str
     value: Optional[int] = None
     functional_unit: Optional[str] = None
+    functional_value: Optional[int] = None
     is_net_carbon_impact: bool = False
     unit: Optional[RefBenefitUnit] = None
     type: Optional[RefBenefitType] = None
@@ -172,6 +176,9 @@ class CaseStudySummaryRead(SQLModel):
     
     # Funding Type
     funding_type: Optional[RefFundingType] = None
+    
+    # Language
+    language: Optional[RefLanguage] = None
     
     # Logo
     logo: Optional[ImageObject] = None
@@ -192,6 +199,7 @@ class CaseStudyDetailRead(CaseStudyBase):
     tech: Optional[RefTechnology] = None
     calc_type: Optional[RefCalculationType] = None
     funding_type: Optional[RefFundingType] = None
+    language: Optional[RefLanguage] = None
     
     logo: Optional[ImageObject] = None
     methodology: Optional[MethodologyRead] = None

@@ -42,7 +42,8 @@ def get_case_study_loader_options(detailed: bool = False):
         selectinload(CaseStudy.funding_type),
         selectinload(CaseStudy.logo),
         selectinload(CaseStudy.addresses),
-        selectinload(CaseStudy.additional_document)
+        selectinload(CaseStudy.additional_document),
+        selectinload(CaseStudy.language)
     ]
 
     if not detailed:
@@ -268,6 +269,7 @@ async def preview_case_study(
                 name=b.name,
                 value=b.value,
                 functional_unit=b.functional_unit,
+                functional_value=b.functional_value,
                 is_net_carbon_impact=b.is_net_carbon_impact,
                 unit=units_map.get(b.unit_code),
                 type=types_map.get(b.type_code)
@@ -532,6 +534,7 @@ async def create_case_study(
             tech_code=case_study_data.tech_code,
             calc_type_code=case_study_data.calc_type_code,
             funding_type_code=case_study_data.funding_type_code,
+            language_code=case_study_data.language_code,
             funding_programme_url=case_study_data.funding_programme_url,
             methodology_id=methodology_obj.id if methodology_obj else None,
             dataset_id=dataset_obj.id if dataset_obj else None,
@@ -724,6 +727,7 @@ async def update_case_study(
         db_case_study.tech_code = case_study_data.tech_code
         db_case_study.calc_type_code = case_study_data.calc_type_code
         db_case_study.funding_type_code = case_study_data.funding_type_code
+        db_case_study.language_code = case_study_data.language_code
         db_case_study.funding_programme_url = case_study_data.funding_programme_url
         
         # Status upgrade processing

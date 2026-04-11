@@ -56,15 +56,17 @@ def test_create_case_study():
                 "unit_code": "tco2",
                 "type_code": "environmental",
                 "is_net_carbon_impact": True,         # NEW: Mandatory flag
-                "functional_unit": "per base station" # NEW: Functional unit
+                "functional_unit": "per base station",
+                "functional_value": 1
             },
             {
                 "name": "Operational Cost Savings",
                 "value": 15,
                 "unit_code": "percent",
                 "type_code": "economic",
-                "is_net_carbon_impact": False,        # NEW: Mandatory flag
-                "functional_unit": "per base station" # NEW: Functional unit
+                "is_net_carbon_impact": False,
+                "functional_unit": "per base station",
+                "functional_value": 1
             }
         ],
         "addresses": [
@@ -153,5 +155,4 @@ def test_create_draft():
 
 if __name__ == "__main__":
     test_create_case_study()
-
     test_create_draft()

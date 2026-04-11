@@ -17,9 +17,10 @@ class BenefitCreate(BaseModel):
     unit_code: Optional[str] = None
     type_code: Optional[str] = None
     functional_unit: Optional[str] = None
+    functional_value: Optional[int] = None
     is_net_carbon_impact: bool = False
 
-    @field_validator("functional_unit", "value", "unit_code", "type_code", "name", mode="before")
+    @field_validator("value", "unit_code", "type_code", "name", "functional_unit", mode="before")
     @classmethod
     def coerce_empty_str(cls, v):
         if isinstance(v, str) and v.strip() == "":
@@ -52,6 +53,7 @@ class CaseStudyCreate(BaseModel):
     tech_code: Optional[str] = None
     calc_type_code: Optional[str] = None
     funding_type_code: Optional[str] = None
+    language_code: Optional[str] = "en"
     funding_programme_url: Optional[str] = None
 
     benefits: List[BenefitCreate] = []
@@ -70,7 +72,7 @@ class CaseStudyCreate(BaseModel):
     # instead of an empty string that would violate FK constraints or cause type errors.
     @field_validator(
         "title", "short_description", "long_description", "problem_solved",
-        "status", "tech_code", "calc_type_code", "funding_type_code",
+        "status", "tech_code", "calc_type_code", "funding_type_code", "language_code",
         "funding_programme_url", "methodology_language", "dataset_language",
         "additional_document_language", "provider_org_id", "funder_org_id",
         "user_org_id", "additional_document_id", "created_date",

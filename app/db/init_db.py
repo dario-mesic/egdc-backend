@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlmodel import SQLModel
 from app.db.session import engine
 # Import all models to ensure they are registered
@@ -10,3 +11,4 @@ async def init_db():
     async with engine.begin() as conn:
         # await conn.run_sync(SQLModel.metadata.drop_all) # Optional: Reset DB
         await conn.run_sync(SQLModel.metadata.create_all)
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))

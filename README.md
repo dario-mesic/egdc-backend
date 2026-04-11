@@ -17,11 +17,11 @@ FastAPI + SQLModel + PostgreSQL backend for the EGDC (Environmental Green Data C
 
 ## Deployment — Required Folder Structure
 
-`docker-compose.yml` builds **three services**: the Postgres database, this backend, and the Next.js frontend. The frontend build context is set to `../egdc-frontend` (relative to the backend directory), so **both repositories must be checked out as siblings** under the same parent folder.
+`docker-compose.yml` builds **three services**: the Postgres database, this backend, and the Next.js frontend. The frontend build context is set to `../Repository-FE` (relative to the backend directory), so **both repositories must be checked out as siblings** under the same parent folder.
 
 ```
 parent-directory/
-├── egdc-backend/          ← this repository
+├── Repository-BE/          ← this repository
 │   ├── docker-compose.yml
 │   ├── Dockerfile
 │   ├── .env               ← copy from .env.example and fill in values
@@ -39,7 +39,7 @@ parent-directory/
 │       ├── reset_admin_password.py
 │       └── ...
 │
-└── egdc-frontend/         ← MUST be at this exact sibling path
+└── Repository-FE/         ← MUST be at this exact sibling path
     ├── Dockerfile
     ├── package.json
     └── ...
@@ -49,10 +49,10 @@ parent-directory/
 > The `frontend` service in `docker-compose.yml` uses:
 > ```yaml
 > build:
->   context: ../egdc-frontend
+>   context: ../Repository-FE
 > ```
-> Docker resolves `../egdc-frontend` relative to the directory that contains
-> `docker-compose.yml` (i.e. `egdc-backend/`). If the frontend is placed
+> Docker resolves `../Repository-FE` relative to the directory that contains
+> `docker-compose.yml` (i.e. `Repository-BE/`). If the frontend is placed
 > anywhere else, the build will fail with *"context not found"*.
 
 ### Uploaded Files (Persistent Volume)
@@ -68,11 +68,11 @@ To back up uploads, use `docker cp` or mount the volume to a host directory.
 
 ```bash
 # 1. Clone both repositories as siblings
-git clone <backend-repo-url>  egdc-backend
-git clone <frontend-repo-url> egdc-frontend
+git clone <backend-repo-url>  Repository-BE
+git clone <frontend-repo-url> Repository-FE
 
 # 2. Create and configure the environment file
-cd egdc-backend
+cd Repository-BE
 cp .env.example .env
 # Edit .env and set: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB,
 #                    SECRET_KEY, NEXT_PUBLIC_API_BASE_URL

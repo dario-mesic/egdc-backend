@@ -12,13 +12,13 @@ from app.models.references import (
     RefBenefitType, RefBenefitUnit, RefOrganizationType, RefCountry
 )
 from app.models.organization import Organization, ContactPoint
-from app.schemas.pagination import PaginatedResponse
+from app.schemas.pagination import PaginatedResponse, SearchPaginatedResponse
 from app.schemas.facets import SearchFacets, FacetItem
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-@router.get("/", response_model=PaginatedResponse[CaseStudySummaryRead])
+@router.get("/", response_model=SearchPaginatedResponse[CaseStudySummaryRead])
 async def search_case_studies(
     # Exact Match Filters
     # Multi-select Filters
@@ -39,7 +39,6 @@ async def search_case_studies(
 
     # Free Text Search
     q: Optional[str] = None,
-    match_type: Literal['partial', 'exact'] = Query('exact'),
     
     # Pagination
     page: int = Query(1, ge=1),
@@ -136,99 +135,88 @@ async def search_case_studies(
             RefCountry, Address.admin_unit_l1 == RefCountry.code, full=False
         )
 
-        if match_type == 'exact':
-            q_safe = re.escape(q)
-            search_regex = f"\\y{q_safe}\\y"
-            q_lower = q.lower()
+        q_safe = re.escape(q)
+        search_regex = f"\\y{q_safe}\\y"
+        q_lower = q.lower()
+        search_term = f"%{q}%"
+        fuzzy_threshold = 0.3
 
-            data_query = data_query.where(
-                or_(
-                    # --- Free-text fields (word-boundary regex, case-insensitive) ---
-                    CaseStudy.title.op("~*")(search_regex),
-                    CaseStudy.short_description.op("~*")(search_regex),
-                    CaseStudy.long_description.op("~*")(search_regex),
-                    CaseStudy.problem_solved.op("~*")(search_regex),
+        exact_cond = or_(
+            # --- Free-text fields (word-boundary regex, case-insensitive) ---
+            CaseStudy.title.op("~*")(search_regex),
+            CaseStudy.short_description.op("~*")(search_regex),
+            CaseStudy.long_description.op("~*")(search_regex),
+            CaseStudy.problem_solved.op("~*")(search_regex),
+            Benefit.name.op("~*")(search_regex),
 
-                    # --- Exact label / name / code matches (trimmed and case-insensitive for labels) ---
-                    func.lower(func.trim(Organization.name)) == q_lower,
-                    func.lower(func.trim(ContactPoint.has_email)) == q_lower,
+            # --- Exact label / name / code matches (trimmed and case-insensitive for labels) ---
+            func.lower(func.trim(Organization.name)) == q_lower,
+            func.lower(func.trim(Benefit.name)) == q_lower,
+            func.lower(func.trim(ContactPoint.has_email)) == q_lower,
 
-                    # Sector label & code
-                    func.lower(func.trim(RefSector.label)) == q_lower,
-                    RefSector.code == q,
+            # Sector label & code
+            func.lower(func.trim(RefSector.label)) == q_lower,
+            RefSector.code == q,
 
-                    # Benefit type & unit labels & codes
-                    # This fixes the "social" issue if searching for the code or lowercase label
-                    func.lower(func.trim(RefBenefitType.label)) == q_lower,
-                    RefBenefitType.code == q,
-                    func.lower(func.trim(RefBenefitUnit.label)) == q_lower,
-                    RefBenefitUnit.code == q,
+            # Benefit type & unit labels & codes
+            func.lower(func.trim(RefBenefitType.label)) == q_lower,
+            RefBenefitType.code == q,
+            func.lower(func.trim(RefBenefitUnit.label)) == q_lower,
+            RefBenefitUnit.code == q,
 
-                    # Technology label & code
-                    func.lower(func.trim(RefTechnology.label)) == q_lower,
-                    RefTechnology.code == q,
+            # Technology label & code
+            func.lower(func.trim(RefTechnology.label)) == q_lower,
+            RefTechnology.code == q,
 
-                    # Calculation & Funding type labels & codes
-                    func.lower(func.trim(RefCalculationType.label)) == q_lower,
-                    RefCalculationType.code == q,
-                    func.lower(func.trim(RefFundingType.label)) == q_lower,
-                    RefFundingType.code == q,
+            # Calculation & Funding type labels & codes
+            func.lower(func.trim(RefCalculationType.label)) == q_lower,
+            RefCalculationType.code == q,
+            func.lower(func.trim(RefFundingType.label)) == q_lower,
+            RefFundingType.code == q,
 
-                    # Organisation type label & code
-                    func.lower(func.trim(RefOrganizationType.label)) == q_lower,
-                    RefOrganizationType.code == q,
+            # Organisation type label & code
+            func.lower(func.trim(RefOrganizationType.label)) == q_lower,
+            RefOrganizationType.code == q,
 
-                    # Address / country
-                    func.trim(Address.admin_unit_l1) == q,
-                    func.lower(func.trim(RefCountry.label)) == q_lower,
-                    func.lower(func.trim(Address.post_name)) == q_lower,
-                )
-            )
-        else:
-            # --- PARTIAL MATCH + FUZZY SEARCH (Typo Tolerance) ---
-            # TODO: CREATE EXTENSION IF NOT EXISTS pg_trgm;
-            # THAT IS NEEDED FOR FUZZY SEARCH
+            # Address / country
+            func.trim(Address.admin_unit_l1) == q,
+            func.lower(func.trim(RefCountry.label)) == q_lower,
+            func.lower(func.trim(Address.post_name)) == q_lower,
+        )
 
-            search_term = f"%{q}%"
-            
-            # Fuzzy Threshold: 0.3 is standard (0.0 = no match, 1.0 = perfect match)
-            # This allows "transprt" (missing 'o') to match "Transport"
-            fuzzy_threshold = 0.3
-            
-            data_query = data_query.where(
-                or_(
-                    # 1. Standard Partial Match (Robust substring search)
-                    CaseStudy.title.ilike(search_term),
-                    CaseStudy.short_description.ilike(search_term),
-                    CaseStudy.long_description.ilike(search_term),
-                    CaseStudy.problem_solved.ilike(search_term),
-                    cast(CaseStudy.created_date, String).ilike(search_term),
-                    Benefit.name.ilike(search_term),
-                    Benefit.type_code.ilike(search_term), # Also match partial codes
-                    RefBenefitType.label.ilike(search_term),
-                    Benefit.unit_code.ilike(search_term), # Also match partial codes
-                    RefBenefitUnit.label.ilike(search_term),
-                    Organization.name.ilike(search_term),
-                    Organization.sector_code.ilike(search_term),
-                    ContactPoint.has_email.ilike(search_term),
-                    RefSector.label.ilike(search_term),
-                    RefOrganizationType.label.ilike(search_term),
-                    RefFundingType.label.ilike(search_term),
-                    Address.admin_unit_l1.ilike(search_term),
-                    RefCountry.label.ilike(search_term), # Match full country name partial
-                    Address.post_name.ilike(search_term),
-                    RefTechnology.label.ilike(search_term),
-                    RefCalculationType.label.ilike(search_term),
+        partial_cond = or_(
+            # 1. Standard Partial Match (Robust substring search)
+            CaseStudy.title.ilike(search_term),
+            CaseStudy.short_description.ilike(search_term),
+            CaseStudy.long_description.ilike(search_term),
+            CaseStudy.problem_solved.ilike(search_term),
+            cast(CaseStudy.created_date, String).ilike(search_term),
+            Benefit.name.ilike(search_term),
+            Benefit.type_code.ilike(search_term),
+            RefBenefitType.label.ilike(search_term),
+            Benefit.unit_code.ilike(search_term),
+            RefBenefitUnit.label.ilike(search_term),
+            Organization.name.ilike(search_term),
+            Organization.sector_code.ilike(search_term),
+            ContactPoint.has_email.ilike(search_term),
+            RefSector.label.ilike(search_term),
+            RefOrganizationType.label.ilike(search_term),
+            RefFundingType.label.ilike(search_term),
+            Address.admin_unit_l1.ilike(search_term),
+            RefCountry.label.ilike(search_term),
+            Address.post_name.ilike(search_term),
+            RefTechnology.label.ilike(search_term),
+            RefCalculationType.label.ilike(search_term),
 
-                    # 2. Fuzzy Match (Trigram Similarity)
-                    # Catches typos in key fields (Title, Org Name, Sector, City)
-                    func.similarity(CaseStudy.title, q) > fuzzy_threshold,
-                    func.similarity(Organization.name, q) > fuzzy_threshold,
-                    func.similarity(RefSector.label, q) > fuzzy_threshold,
-                    func.similarity(Address.post_name, q) > fuzzy_threshold,
-                    func.similarity(RefCountry.label, q) > fuzzy_threshold # Fuzzy Country Name
-                )
-            )
+            # 2. Fuzzy Match (Trigram Similarity)
+            func.similarity(CaseStudy.title, q) > fuzzy_threshold,
+            func.similarity(Organization.name, q) > fuzzy_threshold,
+            func.similarity(RefSector.label, q) > fuzzy_threshold,
+            func.similarity(Address.post_name, q) > fuzzy_threshold,
+            func.similarity(RefCountry.label, q) > fuzzy_threshold
+        )
+
+        data_query = data_query.where(or_(exact_cond, partial_cond))
 
     # Calculate Total BEFORE applying limit/offset.
     # Use a subquery of distinct IDs to prevent inflated counts from multi-joins.
@@ -239,8 +227,8 @@ async def search_case_studies(
         total = total_result.scalar() or 0
     except Exception as exc:
         logger.exception(
-            "Search count query failed. params=q=%r match_type=%r sectors=%r countries=%r error=%s",
-            q, match_type, sectors, countries, exc,
+            "Search count query failed. params=q=%r sectors=%r countries=%r error=%s",
+            q, sectors, countries, exc,
         )
         raise HTTPException(status_code=500, detail=f"Search query failed: {exc}") from exc
 
@@ -249,7 +237,17 @@ async def search_case_studies(
 
     # Get distinct CaseStudy IDs that match all filters, then fetch full objects
     # cleanly (without the filter joins) to avoid duplicate rows from M2M joins.
-    distinct_ids_subquery = data_query.with_only_columns(CaseStudy.id).distinct().subquery()
+    if q:
+        distinct_ids_subquery = data_query.with_only_columns(
+            CaseStudy.id,
+            func.bool_or(exact_cond).label('is_exact')
+        ).group_by(CaseStudy.id).subquery()
+    else:
+        from sqlalchemy import true
+        distinct_ids_subquery = data_query.with_only_columns(
+            CaseStudy.id,
+            true().label('is_exact')
+        ).distinct().subquery()
     
     # 1. Define the primary sort column dynamically
     if sort_by == 'created_date':
@@ -259,8 +257,8 @@ async def search_case_studies(
         primary_sort = func.lower(CaseStudy.title)
 
     ids_query = (
-        select(CaseStudy)
-        .where(CaseStudy.id.in_(select(distinct_ids_subquery.c.id)))
+        select(CaseStudy, distinct_ids_subquery.c.is_exact)
+        .join(distinct_ids_subquery, CaseStudy.id == distinct_ids_subquery.c.id)
         .options(
             selectinload(CaseStudy.benefits).selectinload(Benefit.unit),
             selectinload(CaseStudy.benefits).selectinload(Benefit.type),
@@ -269,15 +267,20 @@ async def search_case_studies(
                  selectinload(Organization.sector),
                  selectinload(Organization.org_type)
             ),
-             selectinload(CaseStudy.is_funded_by).options(
+            selectinload(CaseStudy.is_funded_by).options(
                  selectinload(Organization.sector),
                  selectinload(Organization.org_type)
             ),
             selectinload(CaseStudy.logo),
-            selectinload(CaseStudy.addresses)
+            selectinload(CaseStudy.addresses),
+            selectinload(CaseStudy.language)
         )
     )
     
+    # order by exactness first if q is provided
+    if q:
+        ids_query = ids_query.order_by(distinct_ids_subquery.c.is_exact.desc())
+
     # 2. Apply sorting using the dynamic 'primary_sort' variable
     if sort_order == "desc":
         ids_query = ids_query.order_by(
@@ -295,19 +298,31 @@ async def search_case_studies(
 
     try:
         result = await session.execute(ids_query)
-        items = result.scalars().all()
+        rows = result.all()
     except Exception as exc:
         logger.exception(
-            "Search fetch query failed. params=q=%r match_type=%r sectors=%r countries=%r error=%s",
-            q, match_type, sectors, countries, exc,
+            "Search fetch query failed. params=q=%r sectors=%r countries=%r error=%s",
+            q, sectors, countries, exc,
         )
         raise HTTPException(status_code=500, detail=f"Search query failed: {exc}") from exc
 
-    return PaginatedResponse(
+    exact_matches = []
+    partial_matches = []
+    
+    for row in rows:
+        case_study = row[0]
+        is_exact = row[1]
+        if is_exact:
+            exact_matches.append(case_study)
+        else:
+            partial_matches.append(case_study)
+
+    return SearchPaginatedResponse(
         total=total,
         page=page,
         limit=limit,
-        items=items
+        exact_matches=exact_matches,
+        partial_matches=partial_matches
     )
 
 

@@ -3,6 +3,9 @@
 Run from the project root:
     pytest scripts/test_search.py -v
 
+Alternatively, run as a script:
+    python scripts/test_search.py
+
 The backend must be running and reachable at BASE_URL.
 Set the EGDC_BASE_URL environment variable to override the default.
 """
@@ -21,26 +24,26 @@ SEARCH_CASES = [
         id="no-params-returns-all-published",
     ),
     pytest.param(
-        {"q": "carbon", "match_type": "exact"},
-        id="exact-match-q-only",
+        {"q": "Improved Food Safety"},
+        id="benefit-name-match",
     ),
     pytest.param(
-        {"q": "carbon", "match_type": "partial"},
-        id="partial-match-q-only",
+        {"q": "carbon"},
+        id="match-q-only",
     ),
     pytest.param(
-        {"q": "energy", "match_type": "exact", "sector": "manufacturing"},
-        id="exact-q-plus-sector",
+        {"q": "energy", "sector": "manufacturing"},
+        id="q-plus-sector",
     ),
     pytest.param(
-        {"q": "energy", "match_type": "exact", "country": "FRA"},
-        id="exact-q-plus-country",
+        {"q": "energy", "country": "FRA"},
+        id="q-plus-country",
     ),
     pytest.param(
         {"q": "energy", "sector": "manufacturing", "country": "FRA"},
         id="q-plus-sector-and-country",
     ),
-    # This exact combination was the original crash reproducer.
+    # This combination was the original crash reproducer.
     pytest.param(
         {
             "q": "fasdfs",
@@ -50,7 +53,6 @@ SEARCH_CASES = [
             "limit": 10,
             "sort_by": "created_date",
             "sort_order": "desc",
-            "match_type": "exact",
         },
         id="crash-reproducer-full-param-combo",
     ),
@@ -69,17 +71,16 @@ SEARCH_CASES = [
     pytest.param(
         {
             "q": "renewable",
-            "match_type": "exact",
             "sort_by": "created_date",
             "sort_order": "desc",
             "page": 1,
             "limit": 10,
         },
-        id="exact-q-with-pagination-and-sort",
+        id="q-with-pagination-and-sort",
     ),
     pytest.param(
-        {"q": "renewable", "match_type": "partial", "page": 2, "limit": 5},
-        id="partial-q-page-2",
+        {"q": "renewable", "page": 2, "limit": 5},
+        id="q-page-2",
     ),
 ]
 
@@ -109,8 +110,10 @@ def test_search_response_shape(params):
     assert "total" in body,  "Missing 'total' key in response"
     assert "page" in body,   "Missing 'page' key in response"
     assert "limit" in body,  "Missing 'limit' key in response"
-    assert "items" in body,  "Missing 'items' key in response"
-    assert isinstance(body["items"], list), "'items' must be a list"
+    assert "exact_matches" in body,  "Missing 'exact_matches' key in response"
+    assert "partial_matches" in body,  "Missing 'partial_matches' key in response"
+    assert isinstance(body["exact_matches"], list), "'exact_matches' must be a list"
+    assert isinstance(body["partial_matches"], list), "'partial_matches' must be a list"
 
 
 # ---------------------------------------------------------------------------
@@ -123,8 +126,8 @@ def test_search_pagination_consistency():
     assert r1.status_code == 200
     assert r2.status_code == 200
     b1, b2 = r1.json(), r2.json()
-    ids_page1 = {item["id"] for item in b1["items"]}
-    ids_page2 = {item["id"] for item in b2["items"]}
+    ids_page1 = {item["id"] for item in b1["exact_matches"] + b1["partial_matches"]}
+    ids_page2 = {item["id"] for item in b2["exact_matches"] + b2["partial_matches"]}
     if b1["total"] > 2 and ids_page2:
         assert ids_page1.isdisjoint(ids_page2), (
             f"Page 1 and page 2 share results: {ids_page1 & ids_page2}"
@@ -137,8 +140,9 @@ def test_search_limit_respected():
         r = requests.get(BASE_URL, params={"limit": limit, "page": 1}, timeout=15)
         assert r.status_code == 200
         body = r.json()
-        assert len(body["items"]) <= limit, (
-            f"limit={limit} but got {len(body['items'])} items"
+        total_items = len(body["exact_matches"]) + len(body["partial_matches"])
+        assert total_items <= limit, (
+            f"limit={limit} but got {total_items} items"
         )
 
 
@@ -163,7 +167,6 @@ def test_sector_country_q_combination_no_crash():
         "limit": 10,
         "sort_by": "created_date",
         "sort_order": "desc",
-        "match_type": "exact",
     }
     response = requests.get(BASE_URL, params=params, timeout=15)
     assert response.status_code == 200, (
